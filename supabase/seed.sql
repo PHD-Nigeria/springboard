@@ -1,0 +1,10 @@
+-- Intentionally empty of content. This project's rule is: no real or fake
+-- editorial content is ever checked into git or seeded via migration —
+-- Supabase is the live source of truth for that data, entered through the
+-- (future) CMS or Supabase Studio.
+--
+-- Role bootstrap: every new Supabase Auth user gets a `profiles` row with
+-- role = 'viewer' automatically (see the handle_new_user trigger). To
+-- promote your first admin after they've signed up once, run:
+--
+--   update public.profiles set role = 'admin' where id = '<their-auth-uid>';
