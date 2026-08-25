@@ -2,67 +2,117 @@
  * Springboard design tokens — single CSS source of truth for the design system.
  *
  * Tailwind v4 is CSS-first: variables declared in an `@theme` block are what
- * generate utility classes (e.g. `--color-primary` -> `bg-primary`, `text-primary`).
+ * generate utility classes (e.g. `--color-primary-500` -> `bg-primary-500`).
  * Every color/type/spacing/radius/shadow/motion value used anywhere in the app
  * must come from here — never hardcode a raw hex/px value in a component.
  *
- * NOTE: the palette, type scale, and motion values below are placeholders.
- * They establish the *system* (categories, naming, structure) ahead of real
- * Springboard brand assets (logo, brand colors, approved typefaces), which
- * have not been supplied yet. Swap the values, not the token names, once
- * brand direction is confirmed — components should never need to change.
+ * VISUAL IDENTITY (2026-08-14, revision #3 — AUTHORITATIVE PHD BRAND):
+ * exact PHD brand values, supplied directly by the client, superseding
+ * every prior revision's approximated hues:
+ *   primary #3A008C (PHD Purple), secondary #9FEA47 (PHD Lime),
+ *   plus three sparing supporting accents — coral #FF7373,
+ *   lavender #9B83FF, pink #FF70F2 — and Syne as the sole typeface.
+ * The exact hex for each brand color lives at its natural "base" step
+ * (primary-500 / secondary-400 / the bare coral/lavender/pink tokens) and
+ * every other step is `color-mix()`-derived FROM that same hex, so the
+ * whole scale is traceable back to one authoritative value rather than
+ * hand-picked approximations — including the near-black canvas itself,
+ * which is primary purple mixed almost entirely into black, not a
+ * separately-chosen "cool gray." Swap values, not token names, for any
+ * future revision — components consume semantic tokens
+ * (--color-background, --color-primary-*, ...), never raw hex values.
+ *
+ * --font-display/--font-body both reference --font-syne, injected by
+ * next/font in src/app/layout.tsx — there is deliberately no second
+ * typeface (see that file's comment for why).
  */
 
 @theme {
-  /* ---- Color: primary (brand) ---- */
-  --color-primary-50: oklch(0.97 0.02 250);
-  --color-primary-100: oklch(0.93 0.04 250);
-  --color-primary-200: oklch(0.85 0.07 250);
-  --color-primary-300: oklch(0.74 0.11 250);
-  --color-primary-400: oklch(0.62 0.14 250);
-  --color-primary-500: oklch(0.5 0.16 250);
-  --color-primary-600: oklch(0.42 0.15 250);
-  --color-primary-700: oklch(0.35 0.13 250);
-  --color-primary-800: oklch(0.28 0.1 250);
-  --color-primary-900: oklch(0.2 0.07 250);
+  /* ---- Color: primary — PHD Purple (#3A008C), the brand anchor: nav/
+     footer surfaces, links, active state, focus rings. The exact hex is
+     primary-500; lighter steps (used for text/hover on the dark canvas,
+     where the raw hex is too dark to read) and darker steps (used for
+     surface fills) are color-mix()'d from it. ---- */
+  --color-primary-50: color-mix(in oklch, #3a008c 8%, white);
+  --color-primary-100: color-mix(in oklch, #3a008c 18%, white);
+  --color-primary-200: color-mix(in oklch, #3a008c 34%, white);
+  --color-primary-300: color-mix(in oklch, #3a008c 52%, white);
+  --color-primary-400: color-mix(in oklch, #3a008c 74%, white);
+  --color-primary-500: #3a008c; /* PHD Purple — exact brand value */
+  --color-primary-600: color-mix(in oklch, #3a008c 88%, black);
+  --color-primary-700: color-mix(in oklch, #3a008c 72%, black);
+  --color-primary-800: color-mix(in oklch, #3a008c 56%, black);
+  --color-primary-900: color-mix(in oklch, #3a008c 40%, black);
+  --color-primary: var(--color-primary-500);
 
-  /* ---- Color: secondary ---- */
-  --color-secondary-50: oklch(0.97 0.01 90);
-  --color-secondary-100: oklch(0.93 0.02 90);
-  --color-secondary-200: oklch(0.85 0.03 90);
-  --color-secondary-300: oklch(0.74 0.05 90);
-  --color-secondary-400: oklch(0.62 0.06 90);
-  --color-secondary-500: oklch(0.5 0.07 90);
-  --color-secondary-600: oklch(0.42 0.06 90);
-  --color-secondary-700: oklch(0.35 0.05 90);
-  --color-secondary-800: oklch(0.28 0.04 90);
-  --color-secondary-900: oklch(0.2 0.03 90);
+  /* ---- Color: secondary — PHD Lime (#9FEA47), the high-energy moment
+     color (page-transition sweep, CTAs, hover/active highlights). Used at
+     full strength, sparingly — never a large fill. ---- */
+  --color-secondary-50: color-mix(in oklch, #9fea47 15%, white);
+  --color-secondary-100: color-mix(in oklch, #9fea47 32%, white);
+  --color-secondary-200: color-mix(in oklch, #9fea47 58%, white);
+  --color-secondary-300: color-mix(in oklch, #9fea47 82%, white);
+  --color-secondary-400: #9fea47; /* PHD Lime — exact brand value */
+  --color-secondary-500: #9fea47;
+  --color-secondary-600: color-mix(in oklch, #9fea47 85%, black);
+  --color-secondary-700: color-mix(in oklch, #9fea47 65%, black);
+  --color-secondary-800: color-mix(in oklch, #9fea47 45%, black);
+  --color-secondary-900: color-mix(in oklch, #9fea47 30%, black);
+  --color-secondary: var(--color-secondary-400);
 
-  /* ---- Color: accent ---- */
-  --color-accent-50: oklch(0.96 0.03 35);
-  --color-accent-100: oklch(0.91 0.06 35);
-  --color-accent-200: oklch(0.83 0.11 35);
-  --color-accent-300: oklch(0.74 0.16 35);
-  --color-accent-400: oklch(0.66 0.19 35);
-  --color-accent-500: oklch(0.58 0.2 35);
-  --color-accent-600: oklch(0.5 0.18 35);
-  --color-accent-700: oklch(0.42 0.15 35);
-  --color-accent-800: oklch(0.33 0.11 35);
-  --color-accent-900: oklch(0.24 0.08 35);
+  /* ---- Color: supporting accents — PHD Coral / Lavender / Pink. Single
+     canonical values, not full 10-step scales: these are meant for rare,
+     selective use (taxonomy tagging today), not multi-state interactive
+     UI, so there's no ladder of tints/shades to maintain. ---- */
+  --color-coral: #ff7373;
+  --color-lavender: #9b83ff;
+  --color-pink: #ff70f2;
 
-  /* ---- Color: neutral (editorial ink/paper scale) ---- */
+  /* ---- Color: neutral — near-black canvas, derived from PHD Purple mixed
+     almost entirely into black/white rather than a separately-chosen gray
+     — "near-black" and "purple" are one continuous idea here, not two.
+     Mix percentages are deliberately low (a whisper of brand tint, not a
+     visible hue) — the 2026-08-13 visual QA pass found the previous, much
+     higher percentages at the 300-600 steps made body/muted text and
+     surface fills read as distinctly lavender rather than neutral, which
+     is what made the whole page feel monochromatic-purple. Purple stays
+     concentrated in --color-primary/-taxonomy usage instead. ---- */
   --color-neutral-0: oklch(1 0 0);
-  --color-neutral-50: oklch(0.98 0.002 90);
-  --color-neutral-100: oklch(0.95 0.003 90);
-  --color-neutral-200: oklch(0.89 0.004 90);
-  --color-neutral-300: oklch(0.78 0.005 90);
-  --color-neutral-400: oklch(0.64 0.006 90);
-  --color-neutral-500: oklch(0.5 0.006 90);
-  --color-neutral-600: oklch(0.4 0.006 90);
-  --color-neutral-700: oklch(0.3 0.005 90);
-  --color-neutral-800: oklch(0.2 0.004 90);
-  --color-neutral-900: oklch(0.12 0.003 90);
-  --color-neutral-950: oklch(0.07 0.002 90);
+  --color-neutral-50: color-mix(in oklch, #3a008c 3%, white);
+  --color-neutral-100: color-mix(in oklch, #3a008c 6%, white);
+  --color-neutral-200: color-mix(in oklch, #3a008c 12%, white);
+  --color-neutral-300: color-mix(in oklch, #3a008c 18%, white);
+  --color-neutral-400: color-mix(in oklch, #3a008c 26%, white);
+  --color-neutral-500: color-mix(in oklch, #3a008c 40%, white);
+  --color-neutral-600: color-mix(in oklch, #3a008c 78%, black);
+  --color-neutral-700: color-mix(in oklch, #3a008c 55%, black);
+  --color-neutral-800: color-mix(in oklch, #3a008c 26%, black);
+  --color-neutral-900: color-mix(in oklch, #3a008c 10%, black);
+  --color-neutral-950: color-mix(in oklch, #3a008c 4%, black);
+
+  /* ---- Color: semantic surface roles — what components actually use ---- */
+  --color-background: var(--color-neutral-950);
+  --color-surface: var(--color-neutral-900);
+  --color-surface-raised: var(--color-neutral-800);
+  --color-foreground: var(--color-neutral-50);
+  --color-foreground-muted: var(--color-neutral-400);
+  --color-border: color-mix(in oklch, var(--color-neutral-50) 12%, transparent);
+  --color-border-strong: color-mix(in oklch, var(--color-neutral-50) 22%, transparent);
+
+  /* ---- Color: taxonomy — the 5 brand colors, assigned to categories
+     deterministically by slug (see design-system/tokens/colors.ts
+     `getTaxonomyColorClass`), since categories are open DB rows, not an
+     enum — there's no fixed name-to-color mapping to hardcode. Slot 1 was
+     primary-300 (identity purple) until the 2026-08-13 visual QA pass —
+     low-contrast against the also-purple-tinted canvas, and primary is
+     meant for brand surfaces/identity, not category tagging, so this slot
+     now uses lavender (the "secondary accent" per the approved colour
+     roles) instead. ---- */
+  --color-taxonomy-1: var(--color-lavender);
+  --color-taxonomy-2: var(--color-secondary-400);
+  --color-taxonomy-3: var(--color-coral);
+  --color-taxonomy-4: var(--color-lavender);
+  --color-taxonomy-5: var(--color-pink);
 
   /* ---- Color: semantic feedback (used by callout blocks, form states) ---- */
   --color-info: oklch(0.6 0.13 235);
@@ -70,9 +120,10 @@
   --color-success: oklch(0.6 0.14 150);
   --color-danger: oklch(0.58 0.19 25);
 
-  /* ---- Typography ---- */
-  --font-display: "Source Serif 4", ui-serif, Georgia, serif;
-  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* ---- Typography — Syne only, per the authoritative brand spec: no
+     second typeface for body/UI text (see layout.tsx's font comment). ---- */
+  --font-display: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", monospace;
 
   --text-xs: 0.75rem;
@@ -85,6 +136,7 @@
   --text-4xl: 2.25rem;
   --text-5xl: 3rem;
   --text-6xl: 3.75rem;
+  --text-7xl: 4.5rem;
 
   --tracking-tight: -0.02em;
   --tracking-normal: 0em;
@@ -109,16 +161,20 @@
   --radius-full: 9999px;
 
   /* ---- Shadow ---- */
-  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.05);
-  --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.08);
-  --shadow-lg: 0 12px 32px -8px oklch(0 0 0 / 0.12);
-  --shadow-editorial: 0 24px 64px -16px oklch(0 0 0 / 0.18);
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.24);
+  --shadow-md: 0 4px 16px -2px oklch(0 0 0 / 0.32);
+  --shadow-lg: 0 16px 40px -8px oklch(0 0 0 / 0.4);
+  --shadow-editorial: 0 32px 80px -16px oklch(0 0 0 / 0.5);
 
-  /* ---- Motion: duration ---- */
+  /* ---- Motion: duration. Named for what they're used on, not just size,
+     so a component reaches for the right one without re-deriving timing. ---- */
   --duration-fast: 150ms;
   --duration-base: 300ms;
   --duration-slow: 500ms;
-  --duration-page: 700ms;
+  --duration-page: 650ms;
+  --duration-hero: 1500ms;
+  --duration-scroll-reveal: 800ms;
+  --duration-contributor-reveal: 4500ms;
 
   /* ---- Motion: easing ---- */
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);

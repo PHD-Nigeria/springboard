@@ -47,4 +47,28 @@ export interface Content {
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+
+  /**
+   * Resolved relations, populated only by list/card queries that join for
+   * them (e.g. lib/content/queries.ts's homepage queries) — undefined
+   * elsewhere (e.g. a single content fetch by slug). Optional rather than a
+   * separate "CardContent" type so the one Content shape still satisfies the
+   * content-type registry's `ComponentType<{ content: Content }>` contract
+   * for every Card, whether or not the caller populated these.
+   */
+  category?: { name: string; slug: string } | null;
+  author?: { name: string; slug: string } | null;
+  coverImageUrl?: string | null;
+  /** Route to this content's detail page, built from its publication's slug. */
+  href?: string;
+}
+
+/** Shape of a row in public.authors, with its avatar resolved to a public URL. */
+export interface Author {
+  id: string;
+  slug: string;
+  name: string;
+  title: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
 }

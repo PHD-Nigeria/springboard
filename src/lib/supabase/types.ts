@@ -34,6 +34,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action"]
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: Database["public"]["Enums"]["audit_entity_type"]
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["audit_action"]
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: Database["public"]["Enums"]["audit_entity_type"]
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["audit_action"]
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: Database["public"]["Enums"]["audit_entity_type"]
+          id?: string
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       authors: {
         Row: {
           avatar_media_id: string | null
@@ -42,6 +80,7 @@ export type Database = {
           id: string
           name: string
           slug: string
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -51,6 +90,7 @@ export type Database = {
           id?: string
           name: string
           slug: string
+          title?: string | null
           updated_at?: string
         }
         Update: {
@@ -60,6 +100,7 @@ export type Database = {
           id?: string
           name?: string
           slug?: string
+          title?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -214,6 +255,48 @@ export type Database = {
           },
         ]
       }
+      content_revisions: {
+        Row: {
+          content_id: string
+          created_at: string
+          editor_id: string | null
+          id: string
+          revision_number: number
+          snapshot: Json
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          editor_id?: string | null
+          id?: string
+          revision_number: number
+          snapshot: Json
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          editor_id?: string | null
+          id?: string
+          revision_number?: number
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_revisions_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_revisions_editor_id_fkey"
+            columns: ["editor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_staff: {
         Row: {
           content_id: string
@@ -289,6 +372,7 @@ export type Database = {
           height: number | null
           id: string
           mime_type: string | null
+          original_filename: string | null
           storage_path: string
           uploaded_by: string | null
           width: number | null
@@ -304,6 +388,7 @@ export type Database = {
           height?: number | null
           id?: string
           mime_type?: string | null
+          original_filename?: string | null
           storage_path: string
           uploaded_by?: string | null
           width?: number | null
@@ -319,6 +404,7 @@ export type Database = {
           height?: number | null
           id?: string
           mime_type?: string | null
+          original_filename?: string | null
           storage_path?: string
           uploaded_by?: string | null
           width?: number | null
@@ -448,6 +534,107 @@ export type Database = {
             columns: ["publication_id"]
             isOneToOne: false
             referencedRelation: "publications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_settings: {
+        Row: {
+          banner_description: string | null
+          banner_title: string | null
+          default_publication_id: string | null
+          favicon_media_id: string | null
+          featured_author_ids: string[] | null
+          featured_content_id: string | null
+          homepage_artwork_media_id: string | null
+          id: boolean
+          logo_phd_media_id: string | null
+          logo_springboard_media_id: string | null
+          og_image_media_id: string | null
+          seo_default_description: string | null
+          site_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          banner_description?: string | null
+          banner_title?: string | null
+          default_publication_id?: string | null
+          favicon_media_id?: string | null
+          featured_author_ids?: string[] | null
+          featured_content_id?: string | null
+          homepage_artwork_media_id?: string | null
+          id?: boolean
+          logo_phd_media_id?: string | null
+          logo_springboard_media_id?: string | null
+          og_image_media_id?: string | null
+          seo_default_description?: string | null
+          site_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          banner_description?: string | null
+          banner_title?: string | null
+          default_publication_id?: string | null
+          favicon_media_id?: string | null
+          featured_author_ids?: string[] | null
+          featured_content_id?: string | null
+          homepage_artwork_media_id?: string | null
+          id?: boolean
+          logo_phd_media_id?: string | null
+          logo_springboard_media_id?: string | null
+          og_image_media_id?: string | null
+          seo_default_description?: string | null
+          site_title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_settings_default_publication_id_fkey"
+            columns: ["default_publication_id"]
+            isOneToOne: false
+            referencedRelation: "publications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_settings_favicon_media_id_fkey"
+            columns: ["favicon_media_id"]
+            isOneToOne: false
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_settings_featured_content_id_fkey"
+            columns: ["featured_content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_settings_homepage_artwork_media_id_fkey"
+            columns: ["homepage_artwork_media_id"]
+            isOneToOne: false
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_settings_logo_phd_media_id_fkey"
+            columns: ["logo_phd_media_id"]
+            isOneToOne: false
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_settings_logo_springboard_media_id_fkey"
+            columns: ["logo_springboard_media_id"]
+            isOneToOne: false
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_settings_og_image_media_id_fkey"
+            columns: ["og_image_media_id"]
+            isOneToOne: false
+            referencedRelation: "media"
             referencedColumns: ["id"]
           },
         ]
@@ -604,8 +791,50 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_contributor_or_above: { Args: never; Returns: boolean }
       is_editor_or_admin: { Args: never; Returns: boolean }
+      list_actor_profiles: {
+        Args: never
+        Returns: {
+          email: string
+          full_name: string
+          id: string
+        }[]
+      }
+      list_profiles_with_email: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
     }
     Enums: {
+      audit_action:
+        | "CREATE"
+        | "UPDATE"
+        | "PUBLISH"
+        | "UNPUBLISH"
+        | "ARCHIVE"
+        | "RESTORE"
+        | "DELETE"
+        | "UPLOAD"
+        | "PROMOTE"
+        | "REPLACE"
+        | "ROLE_CHANGE"
+        | "SETTINGS_UPDATE"
+        | "SCHEDULE"
+        | "CANCEL_SCHEDULE"
+      audit_entity_type:
+        | "CONTENT"
+        | "MEDIA"
+        | "AUTHOR"
+        | "CATEGORY"
+        | "SECTION"
+        | "PUBLICATION"
+        | "USER"
+        | "SETTINGS"
       content_status:
         | "draft"
         | "review"
@@ -753,6 +982,32 @@ export const Constants = {
   },
   public: {
     Enums: {
+      audit_action: [
+        "CREATE",
+        "UPDATE",
+        "PUBLISH",
+        "UNPUBLISH",
+        "ARCHIVE",
+        "RESTORE",
+        "DELETE",
+        "UPLOAD",
+        "PROMOTE",
+        "REPLACE",
+        "ROLE_CHANGE",
+        "SETTINGS_UPDATE",
+        "SCHEDULE",
+        "CANCEL_SCHEDULE",
+      ],
+      audit_entity_type: [
+        "CONTENT",
+        "MEDIA",
+        "AUTHOR",
+        "CATEGORY",
+        "SECTION",
+        "PUBLICATION",
+        "USER",
+        "SETTINGS",
+      ],
       content_status: ["draft", "review", "scheduled", "published", "archived"],
       content_type: [
         "EDITOR_NOTE",

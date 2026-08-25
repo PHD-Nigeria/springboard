@@ -11,7 +11,10 @@ export const duration = {
   fast: 0.15,
   base: 0.3,
   slow: 0.5,
-  page: 0.7,
+  page: 0.65,
+  hero: 1.5,
+  scrollReveal: 0.8,
+  contributorReveal: 4.5,
 } as const;
 
 export const easing = {

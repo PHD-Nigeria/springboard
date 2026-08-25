@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ImageBlock as ImageBlockData } from "@/content-types/blocks";
 
 interface ResolvedMedia {
@@ -12,9 +13,19 @@ export function ImageBlock({ block, media }: { block: ImageBlockData; media?: Re
 
   return (
     <figure>
-      {/* eslint-disable-next-line @next/next/no-img-element -- placeholder only, real implementation will use next/image */}
-      <img src={media.url} alt={block.alt ?? ""} width={media.width} height={media.height} />
-      {block.caption ? <figcaption>{block.caption}</figcaption> : null}
+      <div className="relative overflow-hidden bg-surface">
+        <Image
+          src={media.url}
+          alt={block.alt ?? block.caption ?? ""}
+          width={media.width ?? 1200}
+          height={media.height ?? 800}
+          sizes="(min-width: 1024px) 672px, 100vw"
+          className="h-auto w-full object-cover"
+        />
+      </div>
+      {block.caption ? (
+        <figcaption className="mt-2 font-body text-sm text-foreground-muted">{block.caption}</figcaption>
+      ) : null}
     </figure>
   );
 }

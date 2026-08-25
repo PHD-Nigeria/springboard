@@ -1,2 +1,37 @@
 @import "tailwindcss";
 @import "../design-system/tokens/theme.css";
+
+:root {
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+/* Visible keyboard-focus state, token-driven, applied once globally rather
+   than per-component. Mouse/touch users never see it (:focus-visible). */
+:focus-visible {
+  outline: 2px solid var(--color-primary-400);
+  outline-offset: 2px;
+}
+
+/* The search field (src/components/search/Search.tsx) shows its own lime
+   focus treatment — lime being the approved interaction/focus colour,
+   versus purple for brand identity — via a focus-within border on the
+   field, and its own lime outline on the submit button. Id selectors are
+   used (rather than fighting this rule's specificity from a Tailwind
+   utility class) only because this plain, unlayered rule otherwise always
+   outranks any `@layer`-scoped Tailwind utility regardless of specificity. */
+#search-input:focus-visible,
+#search-submit:focus-visible {
+  outline: none;
+}
