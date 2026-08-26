@@ -752,18 +752,31 @@ content, no duplicate audit events, verified by running it twice back to
 back in testing. **This route is not currently called by anything on a
 timer** — no cron infrastructure is deployed (§8: this project isn't
 deployed at all yet). `vercel.json` declares the intended production
-trigger (`*/5 * * * *` against this route) so it activates automatically
-whenever this project is actually deployed to Vercel, per that platform's
-[Cron Jobs feature](https://vercel.com/docs/cron-jobs) (which invokes via
-GET and auto-attaches the `CRON_SECRET` bearer header when that env var is
-set on the project — the route handles both GET and POST for exactly this
-reason). Until then, this is a real, secure, fully-functional endpoint
-with no live trigger — invoked manually for testing, exactly as the
-brief's own testing section describes. Given §5's finding above, this
-absence has no public-safety consequence today; it only means the admin
-UI can show a stale "Scheduled" badge for an article that is, in fact,
-already live, until the endpoint is triggered (manually, or once
-deployed).
+trigger (`0 6 * * *`, once daily) against this route so it activates
+automatically whenever this project is actually deployed to Vercel, per
+that platform's [Cron Jobs feature](https://vercel.com/docs/cron-jobs)
+(which invokes via GET and auto-attaches the `CRON_SECRET` bearer header
+when that env var is set on the project — the route handles both GET and
+POST for exactly this reason). The schedule is once daily rather than
+every 5 minutes because Vercel's Hobby plan (this project is not on Pro)
+rejects any Cron Job that would fire more than once per day — attempting
+`*/5 * * * *` is refused outright at deploy time. Given §5's finding
+below, a daily cadence has no public-safety consequence: public
+visibility of scheduled content never depended on this job running at
+any particular frequency. The only cost of the wider interval is that the
+admin UI can show a stale "Scheduled" badge, and the `PUBLISH` audit
+event/`published_at` timestamp can lag, for up to ~24h after an article's
+`publish_at` passes (versus up to ~5min before) — the content itself is
+already correctly live and public the entire time. If tighter admin-side
+freshness is ever needed without upgrading to Vercel Pro, the job's
+actual work (the `scheduled → published` flip + audit write) could move
+to Supabase's `pg_cron`/`pg_net` extensions, which run on the database
+itself on any schedule independent of Vercel — not wired up today because
+nothing currently requires it (this route's logic is unchanged and would
+still work as the manual/fallback trigger either way). Until deployed,
+this is a real, secure, fully-functional endpoint with no live trigger —
+invoked manually for testing, exactly as the brief's own testing section
+describes.
 
 **Review status.** Was already a valid `content_status` enum value with
 full RLS support (`content_update_own_draft` already permitted a
