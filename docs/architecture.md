@@ -560,6 +560,31 @@ There is no admin signup form by design. To get the first account:
    `/admin/users` (built Phase 4B, 2026-08-15) — step 2's raw SQL is now
    only needed for the very first account, before any admin exists yet.
 
+### Password recovery (2026-08-26)
+
+`/admin/login` has a "Forgot password?" link (`requestPasswordResetAction`
+in `src/lib/admin/auth-actions.ts`) that calls Supabase's
+`resetPasswordForEmail`, and `/admin/reset-password` is the page that link
+eventually lands on — a client component that waits for the browser
+Supabase client (`src/lib/supabase/client.ts`) to fire a `PASSWORD_RECOVERY`
+auth event (it parses the recovery token from the URL automatically, hash
+fragment or PKCE `code` alike — nothing in this app parses the URL itself),
+then shows a set-new-password form. Submitting it calls
+`updatePasswordAction`, a Server Action using the cookie-based server
+client (`src/lib/supabase/server.ts`) — the recovery session the browser
+client established is already in cookies by then, since `@supabase/ssr`
+persists sessions there specifically so server-side code sees the same one.
+
+**This route must be in the Supabase project's redirect-URL allow-list**
+(`Authentication → URL Configuration → Redirect URLs` in the dashboard, or
+the `config/auth` Management API's `uri_allow_list`), as
+`https://springboard.phdnigeria.com/admin/reset-password` (or a
+`/admin/**` wildcard). Without it, Supabase silently redirects recovery
+links to the bare Site URL instead — landing on the public homepage with
+no reset form, which is exactly the bug this page was built to fix. The
+Site URL itself (already `https://springboard.phdnigeria.com`) doesn't
+need to change; only the allow-list does.
+
 ### Media Library & User Management (Phase 4B, 2026-08-15)
 
 Extends the CMS built in Phase 4A with the two pieces it deliberately
