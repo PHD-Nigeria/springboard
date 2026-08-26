@@ -31,7 +31,7 @@ const ACTIONS = [
   "CANCEL_SCHEDULE",
 ] as const;
 
-const ENTITY_TYPES = ["CONTENT", "MEDIA", "AUTHOR", "CATEGORY", "SECTION", "PUBLICATION", "USER", "SETTINGS"] as const;
+const ENTITY_TYPES = ["CONTENT", "MEDIA", "AUTHOR", "CATEGORY", "SECTION", "PUBLICATION", "USER", "SETTINGS", "NAV_ITEM"] as const;
 
 export default async function AdminActivityPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const session = await getAdminSession();

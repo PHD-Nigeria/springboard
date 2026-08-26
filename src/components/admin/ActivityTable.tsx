@@ -26,6 +26,7 @@ const ENTITY_LABELS: Record<string, string> = {
   PUBLICATION: "publication",
   USER: "user",
   SETTINGS: "settings",
+  NAV_ITEM: "navigation item",
 };
 
 /** Turns each action's stored metadata into the single human-readable "Object" cell the brief's mockup shows. */
@@ -42,6 +43,9 @@ function describeObject(row: AdminAuditLogRow): string {
   }
   if (row.entity_type === "CONTENT") {
     return String(m.title ?? "(untitled)");
+  }
+  if (row.entity_type === "NAV_ITEM") {
+    return m.href ? `${String(m.label ?? "(untitled)")} (${String(m.href)})` : String(m.label ?? "(untitled)");
   }
   return String(m.title ?? m.name ?? "(untitled)");
 }

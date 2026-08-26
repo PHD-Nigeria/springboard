@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local-only dev fixture data — never real/fake editorial content in git
+/supabase/dev-seed.sql
