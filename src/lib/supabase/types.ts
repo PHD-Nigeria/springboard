@@ -426,6 +426,42 @@ export type Database = {
           },
         ]
       }
+      nav_items: {
+        Row: {
+          created_at: string
+          display_order: number
+          href: string
+          id: string
+          is_external: boolean
+          is_visible: boolean
+          label: string
+          open_in_new_tab: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          href: string
+          id?: string
+          is_external?: boolean
+          is_visible?: boolean
+          label: string
+          open_in_new_tab?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          href?: string
+          id?: string
+          is_external?: boolean
+          is_visible?: boolean
+          label?: string
+          open_in_new_tab?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -835,6 +871,7 @@ export type Database = {
         | "PUBLICATION"
         | "USER"
         | "SETTINGS"
+        | "NAV_ITEM"
       content_status:
         | "draft"
         | "review"
@@ -1007,6 +1044,7 @@ export const Constants = {
         "PUBLICATION",
         "USER",
         "SETTINGS",
+        "NAV_ITEM",
       ],
       content_status: ["draft", "review", "scheduled", "published", "archived"],
       content_type: [

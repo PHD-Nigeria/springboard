@@ -4,7 +4,7 @@ import "./globals.css";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { PageTransition } from "@/components/motion/PageTransition";
-import { getPublicSiteSettings } from "@/lib/content/queries";
+import { getPublicSiteSettings, getPublicNavItems } from "@/lib/content/queries";
 
 // Self-hosted via next/font — no runtime request to Google, no layout shift.
 // Syne is the sole typeface per the authoritative PHD brand spec (2026-08-14)
@@ -62,11 +62,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const navItems = await getPublicNavItems();
+
   return (
     <html lang="en" className={syne.variable}>
       <body className="bg-background font-body text-foreground antialiased">
-        <Navigation />
+        <Navigation items={navItems} />
         <PageTransition>{children}</PageTransition>
         <Footer />
       </body>

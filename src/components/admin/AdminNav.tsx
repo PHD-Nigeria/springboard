@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { label: "Categories", href: "/admin/categories" },
   { label: "Sections", href: "/admin/sections" },
   { label: "Publications", href: "/admin/publications" },
+  { label: "Navigation", href: "/admin/navigation", hideForContributor: true },
   { label: "Activity", href: "/admin/activity", hideForContributor: true },
   { label: "Users", href: "/admin/users", adminOnly: true },
   { label: "Settings", href: "/admin/settings" },

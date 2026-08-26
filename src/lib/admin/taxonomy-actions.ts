@@ -14,6 +14,11 @@ function nullableString(formData: FormData, key: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** Checkboxes are only present in FormData when checked — NavigationManager renders them with value="true". */
+function boolField(formData: FormData, key: string): boolean {
+  return formData.get(key) === "true";
+}
+
 function describeError(message: string): string {
   if (message.includes("row-level security") || message.includes("permission denied")) {
     return "You don't have permission to do that with your current role.";
@@ -125,6 +130,67 @@ export async function deleteCategoryAction(id: string): Promise<TaxonomyActionRe
   await logAuditEvent(supabase, { actorUserId: user.id, action: "DELETE", entityType: "CATEGORY", entityId: id, metadata: { name: data[0]?.name } });
 
   revalidatePath("/admin/categories");
+  return { error: null };
+}
+
+// ----------------------------------------------------------------- nav_items
+/** Nothing references nav_items (no FK anywhere points at it) — always "no usage," kept only so NavigationManager can reuse SafeDeleteButton like every other manager. */
+export async function getNavItemUsageAction(): Promise<{ count: number }> {
+  return { count: 0 };
+}
+
+export async function saveNavItemAction(formData: FormData): Promise<TaxonomyActionResult> {
+  const supabase = await createClient();
+  const user = await requireUser(supabase);
+  if (!user) return { error: "Your session has expired — sign in again." };
+
+  const id = nullableString(formData, "id");
+  const label = nullableString(formData, "label");
+  const href = nullableString(formData, "href");
+  if (!label || !href) return { error: "Label and URL are required." };
+
+  const isExternal = boolField(formData, "is_external");
+  const record = {
+    label,
+    href,
+    display_order: Number(formData.get("display_order") ?? 0) || 0,
+    is_visible: boolField(formData, "is_visible"),
+    is_external: isExternal,
+    // Only meaningful for external links — an internal Link never opens a new tab.
+    open_in_new_tab: isExternal && boolField(formData, "open_in_new_tab"),
+  };
+
+  if (id) {
+    const { data, error } = await supabase.from("nav_items").update(record).eq("id", id).select("id");
+    if (error) return { error: describeError(error.message) };
+    const denied = permissionResult(data);
+    if (denied) return denied;
+    await logAuditEvent(supabase, { actorUserId: user.id, action: "UPDATE", entityType: "NAV_ITEM", entityId: id, metadata: { label, href } });
+  } else {
+    const { data, error } = await supabase.from("nav_items").insert(record).select("id").single();
+    if (error) return { error: describeError(error.message) };
+    await logAuditEvent(supabase, { actorUserId: user.id, action: "CREATE", entityType: "NAV_ITEM", entityId: data.id, metadata: { label, href } });
+  }
+
+  revalidatePath("/admin/navigation");
+  revalidatePath("/", "layout");
+  return { error: null };
+}
+
+export async function deleteNavItemAction(id: string): Promise<TaxonomyActionResult> {
+  const supabase = await createClient();
+  const user = await requireUser(supabase);
+  if (!user) return { error: "Your session has expired — sign in again." };
+
+  const { data, error } = await supabase.from("nav_items").delete().eq("id", id).select("id, label");
+  if (error) return { error: describeError(error.message) };
+  const denied = permissionResult(data);
+  if (denied) return denied;
+
+  await logAuditEvent(supabase, { actorUserId: user.id, action: "DELETE", entityType: "NAV_ITEM", entityId: id, metadata: { label: data[0]?.label } });
+
+  revalidatePath("/admin/navigation");
+  revalidatePath("/", "layout");
   return { error: null };
 }
 

@@ -517,3 +517,36 @@ export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
     faviconUrl: resolveUrl(data?.favicon ?? null),
   };
 }
+
+export interface PublicNavItem {
+  id: string;
+  label: string;
+  href: string;
+  isExternal: boolean;
+  openInNewTab: boolean;
+}
+
+/**
+ * Public header navigation, ordered — nav_items_select's RLS (`using
+ * (is_visible)`) is what actually excludes hidden rows for anonymous
+ * visitors; this doesn't repeat that filter itself, matching this file's
+ * existing rule of trusting RLS rather than a second application-level
+ * filter that could drift out of sync (see sitemap.ts's own comment on the
+ * same point).
+ */
+export async function getPublicNavItems(): Promise<PublicNavItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("nav_items")
+    .select("id, label, href, is_external, open_in_new_tab")
+    .order("display_order", { ascending: true });
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    label: row.label,
+    href: row.href,
+    isExternal: row.is_external,
+    openInNewTab: row.open_in_new_tab,
+  }));
+}

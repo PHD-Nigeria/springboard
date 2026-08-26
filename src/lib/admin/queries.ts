@@ -454,6 +454,19 @@ function resolveAssetSlot(
   };
 }
 
+/**
+ * All nav items, visible or not — the admin manager needs to show hidden
+ * rows too (that's what the visibility toggle is for). Public rendering
+ * uses getPublicNavItems() (src/lib/content/queries.ts) instead, which is
+ * RLS-scoped to is_visible = true.
+ */
+export async function getNavItems() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("nav_items").select("*").order("display_order", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** The single site_settings row is seeded by its migration — always exactly one row, never missing. */
 export async function getSiteSettings(): Promise<AdminSiteSettings> {
   const supabase = await createClient();
