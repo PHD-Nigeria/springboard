@@ -1,0 +1,191 @@
+/**
+ * Typography for the guide's rendered Markdown (.guide-article, built by
+ * src/lib/guide/markdown.ts's renderGuideMarkdown). A plain, non-module CSS
+ * file — Next.js explicitly supports importing global CSS from any layout,
+ * not just the root one — scoped entirely under one distinctive class so it
+ * can never affect anything outside this route. Every value below is one of
+ * the design tokens already declared in src/design-system/tokens/theme.css
+ * (var(--color-*), var(--font-*), var(--spacing-*), ...); nothing here is a
+ * new color, font, or spacing scale — see that file for what each token
+ * means and where else it's used.
+ */
+
+.guide-article {
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  max-width: 72ch;
+}
+
+.guide-article > *:first-child {
+  margin-top: 0;
+}
+
+.guide-article h1,
+.guide-article h2,
+.guide-article h3,
+.guide-article h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-foreground);
+  line-height: var(--leading-tight);
+  scroll-margin-top: var(--spacing-gutter);
+}
+
+.guide-article h1 {
+  font-size: var(--text-3xl);
+  margin: 0 0 1rem;
+}
+
+.guide-article h2 {
+  font-size: var(--text-2xl);
+  margin: 2.5rem 0 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.guide-article h2:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.guide-article h3 {
+  font-size: var(--text-xl);
+  margin: 2rem 0 0.75rem;
+}
+
+.guide-article h4 {
+  font-size: var(--text-lg);
+  margin: 1.5rem 0 0.5rem;
+}
+
+.guide-article p,
+.guide-article ul,
+.guide-article ol {
+  margin: 0 0 1rem;
+}
+
+.guide-article ul,
+.guide-article ol {
+  padding-left: 1.5rem;
+}
+
+.guide-article ul {
+  list-style: disc;
+}
+
+.guide-article ol {
+  list-style: decimal;
+}
+
+.guide-article li {
+  margin: 0.35rem 0;
+}
+
+.guide-article li > ul,
+.guide-article li > ol {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.guide-article strong {
+  color: var(--color-foreground);
+  font-weight: 600;
+}
+
+.guide-article a {
+  color: var(--color-secondary-400);
+  text-underline-offset: 2px;
+}
+
+.guide-article a:hover {
+  text-decoration: none;
+}
+
+.guide-article code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.4em;
+}
+
+.guide-article pre {
+  overflow-x: auto;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  margin: 0 0 1rem;
+}
+
+.guide-article pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.guide-article blockquote {
+  margin: 0 0 1rem;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 2px solid var(--color-secondary-400);
+  color: var(--color-foreground-muted);
+}
+
+.guide-article hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 2rem 0;
+}
+
+/* Tables carry every chapter's role/permission matrix — the guide's single
+   most content-dense element, so it gets its own horizontal-scroll
+   container rather than ever overflowing the page on a narrow screen. */
+.guide-article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.5rem;
+  font-size: var(--text-sm);
+}
+
+.guide-article thead {
+  background: var(--color-surface-raised);
+}
+
+.guide-article th,
+.guide-article td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.guide-article th {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-foreground);
+  white-space: nowrap;
+}
+
+/* A table wrapped for horizontal scroll — see MarkdownArticle's table wrapper. */
+.guide-table-scroll {
+  overflow-x: auto;
+  margin: 0 0 1.5rem;
+  border: 1px solid var(--color-border);
+}
+
+.guide-table-scroll table {
+  margin: 0;
+  border: none;
+}
+
+.guide-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem 0;
+  border: 1px solid var(--color-border);
+  cursor: zoom-in;
+}

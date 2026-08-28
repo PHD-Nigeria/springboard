@@ -10,6 +10,17 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   : null;
 
 const nextConfig: NextConfig = {
+  // The in-app User Guide (/admin/guide) reads docs/user-guide/*.md and
+  // docs/user-guide/images/*.png from disk at request time — its parent
+  // layout checks the signed-in session via cookies, which forces the
+  // whole route to render dynamically (not statically), so these files
+  // must be traced into the deployed serverless function or a production
+  // request would 404/500 trying to read a file that was never bundled.
+  // See src/lib/guide/content.ts and .../guide/images/[...path]/route.ts.
+  outputFileTracingIncludes: {
+    "/admin/guide/**": ["docs/user-guide/**/*"],
+  },
+
   images: {
     remotePatterns: supabaseUrl
       ? [

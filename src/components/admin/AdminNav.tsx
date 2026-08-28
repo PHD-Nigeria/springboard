@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { label: "Activity", href: "/admin/activity", hideForContributor: true },
   { label: "Users", href: "/admin/users", adminOnly: true },
   { label: "Settings", href: "/admin/settings" },
+  { label: "User Guide", href: "/admin/guide" },
 ];
 
 export function AdminNav({ session }: { session: AdminSession }) {
