@@ -2,9 +2,16 @@
 
 import { useState, useTransition, useRef } from "react";
 import Image from "next/image";
-import { searchMediaAction, uploadMediaAction, promoteMediaAction } from "@/lib/admin/media-actions";
+import { searchMediaAction, promoteMediaAction } from "@/lib/admin/media-actions";
+import { uploadMediaDirect, isRetryableMediaUploadError, type MediaUploadStage } from "@/lib/admin/media-upload-client";
 import type { AdminMediaRow } from "@/lib/admin/queries";
 import { AdminButton, AdminInput } from "@/components/admin/ui";
+
+const STAGE_LABEL: Record<MediaUploadStage, string> = {
+  preparing: "Preparing…",
+  uploading: "Uploading…",
+  saving: "Saving…",
+};
 
 interface MediaPickerProps {
   /** Currently selected media, if any — shown as a preview even before the panel opens. */
@@ -27,6 +34,7 @@ export function MediaPicker({ selected, onSelect, onClear }: MediaPickerProps) {
   const [results, setResults] = useState<AdminMediaRow[]>([]);
   const [query, setQuery] = useState("");
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadStage, setUploadStage] = useState<MediaUploadStage | null>(null);
   const [promoteError, setPromoteError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,12 +84,14 @@ export function MediaPicker({ selected, onSelect, onClear }: MediaPickerProps) {
       return;
     }
     setUploadError(null);
-    const formData = new FormData();
-    formData.set("file", file);
-    formData.set("alt_text", altTextRef.current?.value ?? "");
-    formData.set("bucket", "private");
+    const altText = altTextRef.current?.value ?? "";
     startTransition(async () => {
-      const result = await uploadMediaAction(formData);
+      const result = await uploadMediaDirect(file, {
+        altText,
+        bucket: "private",
+        onStageChange: setUploadStage,
+      });
+      setUploadStage(null);
       if (result.error) {
         setUploadError(result.error);
         return;
@@ -183,10 +193,14 @@ export function MediaPicker({ selected, onSelect, onClear }: MediaPickerProps) {
               />
               <AdminInput ref={altTextRef} placeholder="Alt text" className="max-w-[220px]" />
               <AdminButton type="button" disabled={pending} onClick={handleUpload}>
-                {pending ? "Uploading…" : "Upload"}
+                {uploadStage ? STAGE_LABEL[uploadStage] : uploadError && isRetryableMediaUploadError(uploadError) ? "Try again" : "Upload"}
               </AdminButton>
             </div>
-            {uploadError && <p className="mt-2 font-body text-sm text-danger">{uploadError}</p>}
+            {uploadError && (
+              <p role="alert" className="mt-2 font-body text-sm text-danger">
+                {uploadError}
+              </p>
+            )}
           </div>
         </div>
       )}

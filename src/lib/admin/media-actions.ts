@@ -6,9 +6,8 @@ import { getAdminSession } from "@/lib/auth/session";
 import { getPublicUrl, STORAGE_BUCKETS } from "@/lib/storage/buckets";
 import { listMedia, type AdminMediaRow } from "@/lib/admin/queries";
 import { logAuditEvent } from "@/lib/admin/audit";
+import { MAX_FILE_SIZE_BYTES, isAllowedMimeType, MEDIA_UPLOAD_ERRORS } from "@/lib/admin/media-constants";
 
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // matches the Storage bucket's own limit (see 20260812020100_harden_storage_buckets.sql)
 const MEDIA_ROW_SELECT = "id, bucket, storage_path, original_filename, alt_text, caption, mime_type, width, height, file_size_bytes, created_at";
 
 export interface MediaActionResult {
@@ -25,72 +24,192 @@ function describeError(message: string): string {
 }
 
 /**
- * Upload -> insert media row -> return it, matching the sequence the
- * milestone brief specifies. If the DB insert fails after a successful
- * Storage upload, the just-uploaded object is deleted so a failed save
- * never leaves an orphaned file behind — the one place in this flow a
- * partial failure could otherwise happen.
+ * Stricter than describeError above: used only by the two direct-upload
+ * actions below, whose Storage-side errors are more likely to echo internal
+ * details (bucket ids, storage paths, provider-specific wording) that
+ * shouldn't reach an editor's screen even indirectly. The one recognizable,
+ * safe-to-show case is a permissions denial; everything else collapses to
+ * whichever MEDIA_UPLOAD_ERRORS message the caller passes as `fallback` —
+ * specific to what step failed, never the raw error. The real text always
+ * still goes to the server log the caller already writes via console.error
+ * before calling this.
  */
-export async function uploadMediaAction(formData: FormData): Promise<MediaActionResult> {
+function describeUploadError(message: string, fallback: string): string {
+  if (message.includes("row-level security") || message.includes("permission denied")) {
+    return MEDIA_UPLOAD_ERRORS.PERMISSION_DENIED;
+  }
+  return fallback;
+}
+
+export interface CreateMediaUploadUrlInput {
+  filename: string;
+  mimeType: string;
+  fileSize: number;
+  bucket: "public" | "private";
+}
+
+export interface CreateMediaUploadUrlResult {
+  error: string | null;
+  signedUrl?: string;
+  token?: string;
+  path?: string;
+  bucket?: "public" | "private";
+}
+
+/**
+ * Step 1 of the direct-to-Storage upload flow (see docs/architecture.md-
+ * adjacent design discussion): issues a short-lived, path-scoped Storage
+ * upload authorization instead of accepting the file itself, so the actual
+ * binary never has to pass through a Server Action (and therefore never
+ * hits Vercel's ~4.5MB function payload limit, which is what made the old
+ * single-request uploadMediaAction unable to reach this app's real 25MB
+ * limit in production).
+ *
+ * `createSignedUploadUrl` requires exactly the `insert` permission on
+ * `storage.objects` per the Supabase SDK's own documented contract — i.e.
+ * this call is gated by the *existing* media_private_write/media_public_write
+ * RLS policies (20260812011200_storage_buckets.sql), unchanged. A viewer or
+ * signed-out caller is refused here and never receives a token.
+ *
+ * The size/MIME checks here are defense-in-depth against a client that
+ * skipped its own pre-check or is lying — the real, unbypassable ceiling is
+ * the bucket's own file_size_limit/allowed_mime_types
+ * (20260812020100_harden_storage_buckets.sql), enforced by Storage itself
+ * at upload time regardless of what this action believes.
+ */
+export async function createMediaUploadUrlAction(input: CreateMediaUploadUrlInput): Promise<CreateMediaUploadUrlResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Your session has expired — sign in again." };
+  if (!user) return { error: MEDIA_UPLOAD_ERRORS.SESSION_EXPIRED_BEFORE_UPLOAD };
 
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Choose a file to upload." };
+  if (!input.filename || input.fileSize <= 0) {
+    return { error: MEDIA_UPLOAD_ERRORS.NO_FILE };
   }
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    return { error: "Only JPEG, PNG, or WebP images are supported here." };
+  if (!isAllowedMimeType(input.mimeType)) {
+    return { error: MEDIA_UPLOAD_ERRORS.UNSUPPORTED_TYPE };
   }
-  if (file.size > MAX_FILE_SIZE_BYTES) {
-    return { error: "That file is larger than the 25MB limit." };
+  if (input.fileSize > MAX_FILE_SIZE_BYTES) {
+    return { error: MEDIA_UPLOAD_ERRORS.FILE_TOO_LARGE };
   }
 
-  const altText = String(formData.get("alt_text") ?? "").trim() || null;
-  const caption = String(formData.get("caption") ?? "").trim() || null;
-  // New uploads default to private — nothing becomes publicly reachable
-  // until an explicit Promote step (promoteMediaAction below). Callers can
-  // still request "public" directly (e.g. this may not be needed once the
-  // picker's promote affordance ships, but nothing currently relies on it).
-  const bucket = formData.get("bucket") === "public" ? "media-public" : "media-private";
-  const bucketEnum = bucket === "media-public" ? "public" : "private";
-
-  const extension = file.name.split(".").pop() || "bin";
+  const bucketId = input.bucket === "public" ? "media-public" : "media-private";
+  const extension = input.filename.split(".").pop() || "bin";
   const storagePath = `uploads/${crypto.randomUUID()}.${extension}`;
 
-  const { error: uploadError } = await supabase.storage.from(bucket).upload(storagePath, file, {
-    contentType: file.type,
-    upsert: false,
-  });
-  if (uploadError) {
-    return { error: `Upload failed: ${uploadError.message}` };
+  const { data, error } = await supabase.storage.from(bucketId).createSignedUploadUrl(storagePath);
+  if (error) {
+    console.error("createMediaUploadUrlAction: createSignedUploadUrl failed:", error.message);
+    return { error: describeUploadError(error.message, MEDIA_UPLOAD_ERRORS.SIGNED_URL_FAILED) };
+  }
+
+  return { error: null, signedUrl: data.signedUrl, token: data.token, path: storagePath, bucket: input.bucket };
+}
+
+export interface CompleteMediaUploadInput {
+  path: string;
+  bucket: "public" | "private";
+  originalFilename: string;
+  mimeType: string;
+  fileSize: number;
+  altText: string | null;
+  caption: string | null;
+}
+
+/**
+ * Step 3 (after the browser has PUT the file straight to Storage using the
+ * signed URL from createMediaUploadUrlAction, step 2) — records the
+ * public.media row, exactly the way uploadMediaAction used to after its own
+ * (server-mediated) upload, and keeps the same rollback behavior: an insert
+ * failure deletes the just-uploaded Storage object rather than leaving an
+ * unreferenced file behind.
+ *
+ * Two checks exist here that the old single-request flow never needed,
+ * because the file now arrives via a step this action didn't witness:
+ *  - `list()` confirms an object genuinely exists at `path` before trusting
+ *    it — closes "insert a row pointing at nothing."
+ *  - a pre-existing `media` row for the same `path` is refused — closes a
+ *    second/duplicate claim of the same upload.
+ * See the design discussion's "arbitrary public.media record" section for
+ * the reasoning and its accepted residual risk.
+ */
+export async function completeMediaUploadAction(input: CompleteMediaUploadInput): Promise<MediaActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: MEDIA_UPLOAD_ERRORS.SESSION_EXPIRED_BEFORE_SAVE };
+  }
+
+  if (!isAllowedMimeType(input.mimeType)) {
+    return { error: MEDIA_UPLOAD_ERRORS.UNSUPPORTED_TYPE };
+  }
+  if (input.fileSize > MAX_FILE_SIZE_BYTES) {
+    return { error: MEDIA_UPLOAD_ERRORS.FILE_TOO_LARGE };
+  }
+  // Storage paths are always this action's/createMediaUploadUrlAction's own
+  // `uploads/<uuid>.<ext>` convention — anything else was never legitimately
+  // issued by this app.
+  if (!/^uploads\/[0-9a-fA-F-]{36}\.[A-Za-z0-9]+$/.test(input.path)) {
+    return { error: MEDIA_UPLOAD_ERRORS.INVALID_REFERENCE };
+  }
+
+  const bucketId = input.bucket === "public" ? "media-public" : "media-private";
+  const folder = input.path.includes("/") ? input.path.split("/").slice(0, -1).join("/") : undefined;
+  const filenamePart = input.path.split("/").pop() ?? input.path;
+
+  const { data: listing, error: listError } = await supabase.storage.from(bucketId).list(folder, { search: filenamePart });
+  if (listError) {
+    console.error("completeMediaUploadAction: list() failed:", listError.message);
+    return { error: describeUploadError(listError.message, MEDIA_UPLOAD_ERRORS.VERIFY_FAILED) };
+  }
+  if (!listing.some((entry) => entry.name === filenamePart)) {
+    return { error: MEDIA_UPLOAD_ERRORS.OBJECT_NOT_FOUND };
+  }
+
+  const { data: alreadyClaimed, error: claimCheckError } = await supabase
+    .from("media")
+    .select("id")
+    .eq("storage_path", input.path)
+    .maybeSingle();
+  if (claimCheckError) {
+    console.error("completeMediaUploadAction: duplicate-claim check failed:", claimCheckError.message);
+    return { error: describeUploadError(claimCheckError.message, MEDIA_UPLOAD_ERRORS.VERIFY_FAILED) };
+  }
+  if (alreadyClaimed) {
+    return { error: MEDIA_UPLOAD_ERRORS.ALREADY_SAVED };
   }
 
   const { data, error: insertError } = await supabase
     .from("media")
     .insert({
-      bucket: bucketEnum,
-      storage_path: storagePath,
-      original_filename: file.name || null,
-      mime_type: file.type,
-      file_size_bytes: file.size,
+      bucket: input.bucket,
+      storage_path: input.path,
+      original_filename: input.originalFilename || null,
+      mime_type: input.mimeType,
+      file_size_bytes: input.fileSize,
       // width/height are left null — no image-decoding library in this server
       // runtime, and every consumer (next/image `fill` + a fixed aspect-ratio
       // container) doesn't depend on intrinsic dimensions to render correctly.
-      alt_text: altText,
-      caption,
+      alt_text: input.altText,
+      caption: input.caption,
       uploaded_by: user.id,
     })
     .select(MEDIA_ROW_SELECT)
     .single();
 
   if (insertError) {
-    // Roll back the orphaned upload rather than leaving an unreferenced file.
-    await supabase.storage.from(bucket).remove([storagePath]);
-    return { error: `Couldn't save this upload: ${insertError.message}` };
+    // Roll back the orphaned upload rather than leaving an unreferenced file
+    // — same behavior uploadMediaAction always had for this exact case. The
+    // rollback happens regardless of which message describeUploadError
+    // picks — SAVE_FAILED's wording ("the file was uploaded, but...") stays
+    // accurate even though this line makes that true only briefly: it was
+    // genuinely in Storage the moment this insert failed.
+    await supabase.storage.from(bucketId).remove([input.path]);
+    console.error("completeMediaUploadAction: insert failed:", insertError.message);
+    return { error: describeUploadError(insertError.message, MEDIA_UPLOAD_ERRORS.SAVE_FAILED) };
   }
 
   await logAuditEvent(supabase, {
@@ -343,7 +462,7 @@ export async function replaceMediaAction(id: string, formData: FormData): Promis
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose a replacement file." };
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) return { error: "Only JPEG, PNG, or WebP images are supported here." };
+  if (!isAllowedMimeType(file.type)) return { error: "Only JPEG, PNG, or WebP images are supported here." };
   if (file.size > MAX_FILE_SIZE_BYTES) return { error: "That file is larger than the 25MB limit." };
 
   const { data: existing, error: fetchError } = await supabase

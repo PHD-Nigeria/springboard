@@ -4,7 +4,6 @@ import { useState, useTransition, useRef } from "react";
 import Image from "next/image";
 import {
   searchMediaAction,
-  uploadMediaAction,
   updateMediaAction,
   deleteMediaAction,
   promoteMediaAction,
@@ -12,8 +11,15 @@ import {
   getMediaUsageAction,
   type MediaUsageRow,
 } from "@/lib/admin/media-actions";
+import { uploadMediaDirect, isRetryableMediaUploadError, type MediaUploadStage } from "@/lib/admin/media-upload-client";
 import type { AdminMediaRow } from "@/lib/admin/queries";
 import { AdminButton, AdminInput, AdminSelect } from "@/components/admin/ui";
+
+const STAGE_LABEL: Record<MediaUploadStage, string> = {
+  preparing: "Preparing…",
+  uploading: "Uploading…",
+  saving: "Saving…",
+};
 
 const TYPE_FILTERS = [
   { label: "All types", value: "" },
@@ -40,6 +46,7 @@ export function MediaLibrary({ initialMedia }: { initialMedia: AdminMediaRow[] }
   const [typeFilter, setTypeFilter] = useState("");
   const [selected, setSelected] = useState<AdminMediaRow | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadStage, setUploadStage] = useState<MediaUploadStage | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,8 +71,17 @@ export function MediaLibrary({ initialMedia }: { initialMedia: AdminMediaRow[] }
 
   function handleUpload(formData: FormData) {
     setUploadError(null);
+    const file = formData.get("file");
+    const altText = String(formData.get("alt_text") ?? "");
+    const caption = String(formData.get("caption") ?? "");
     startTransition(async () => {
-      const result = await uploadMediaAction(formData);
+      const result = await uploadMediaDirect(file instanceof File ? file : null, {
+        altText,
+        caption,
+        bucket: "private",
+        onStageChange: setUploadStage,
+      });
+      setUploadStage(null);
       if (result.error) {
         setUploadError(result.error);
         return;
@@ -148,9 +164,13 @@ export function MediaLibrary({ initialMedia }: { initialMedia: AdminMediaRow[] }
         <AdminInput name="caption" placeholder="Caption (optional)" className="max-w-[200px]" />
         <input type="hidden" name="bucket" value="private" />
         <AdminButton type="submit" disabled={pending}>
-          {pending ? "Uploading…" : "Upload"}
+          {uploadStage ? STAGE_LABEL[uploadStage] : uploadError && isRetryableMediaUploadError(uploadError) ? "Try again" : "Upload"}
         </AdminButton>
-        {uploadError && <p className="w-full font-body text-sm text-danger">{uploadError}</p>}
+        {uploadError && (
+          <p role="alert" className="w-full font-body text-sm text-danger">
+            {uploadError}
+          </p>
+        )}
       </form>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
