@@ -1,14 +1,46 @@
+import Image from "next/image";
+import Link from "next/link";
 import type { Content } from "@/content-types/types";
+import { getSpotlightDetail, getContentStaff } from "@/lib/content/queries";
+import { MediaFallback, initialsFromName } from "@/components/editorial/MediaFallback";
 
 /**
- * Placeholder card for STAFF_SPOTLIGHT and BIRTHDAY content. A real
- * implementation resolves the linked `staff` row (via staff_spotlights or
- * content_staff) rather than just the content row shown here.
+ * Card for STAFF_SPOTLIGHT and BIRTHDAY content, the registry's Card for
+ * both (see content-types/registry.ts). Async because the person's actual
+ * name/title lives in the `staff` table (via staff_spotlights or
+ * content_staff, resolved by content.id), not in the content row itself:
+ * a spotlight's own title is its headline ("Our Newest Addition to the
+ * Team"), not the person's name, so ArticleCard's generic title/summary
+ * rendering can't stand in for this. content.coverImageUrl is still used
+ * directly for the photo (set to the staff member's own photo at creation
+ * time) rather than re-resolved here, since that part's already correct on
+ * the content row.
  */
-export function StaffProfile({ content }: { content: Content }) {
+export async function StaffProfile({ content }: { content: Content }) {
+  const staff =
+    content.contentType === "STAFF_SPOTLIGHT"
+      ? (await getSpotlightDetail(content.id))?.staff
+      : (await getContentStaff(content.id))[0];
+
+  const name = staff?.fullName ?? content.title;
+  const subtitle = content.contentType === "BIRTHDAY" ? content.summary : staff?.title;
+  const eyebrow = content.contentType === "STAFF_SPOTLIGHT" ? "Staff Spotlight" : "Staff News";
+  const photoUrl = staff?.photoUrl ?? content.coverImageUrl;
+
   return (
-    <div>
-      <h3>{content.title}</h3>
-    </div>
+    <Link href={content.href ?? "#"} className="group block text-center">
+      <div className="relative mx-auto mb-4 aspect-square w-32 overflow-hidden rounded-full bg-surface">
+        {photoUrl ? (
+          <Image src={photoUrl} alt={name} fill sizes="128px" className="object-cover" />
+        ) : (
+          <MediaFallback seed={content.id} initials={initialsFromName(name)} className="rounded-full" />
+        )}
+      </div>
+      <p className="mb-1 font-body text-xs font-medium tracking-wide text-foreground-muted uppercase">{eyebrow}</p>
+      <h3 className="font-display text-lg font-medium text-foreground transition-colors duration-fast group-hover:text-secondary-400">
+        {name}
+      </h3>
+      {subtitle && <p className="mt-1 font-body text-sm text-foreground-muted">{subtitle}</p>}
+    </Link>
   );
 }

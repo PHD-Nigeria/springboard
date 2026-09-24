@@ -3,7 +3,7 @@
 import { useActionState, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { saveContentAction, type ContentFormState, type ContentRevisionRow } from "@/lib/admin/content-actions";
-import { CONTENT_TYPES } from "@/content-types/types";
+import { CONTENT_TYPES, CONTENT_TYPE_LABELS } from "@/content-types/types";
 import { AdminButton, AdminInput, AdminLabel, AdminSelect, AdminTextarea, StatusBadge } from "@/components/admin/ui";
 import { MediaPicker } from "@/components/admin/MediaPicker";
 import { BlockEditor } from "@/components/admin/BlockEditor";
@@ -124,7 +124,7 @@ export function ContentForm({
           <AdminSelect id="content_type" name="content_type" defaultValue={content?.content_type ?? "ARTICLE"} required>
             {CREATABLE_TYPES.map((type) => (
               <option key={type} value={type}>
-                {type}
+                {CONTENT_TYPE_LABELS[type]}
               </option>
             ))}
           </AdminSelect>

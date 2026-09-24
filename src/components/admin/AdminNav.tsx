@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { label: "Content", href: "/admin/content" },
   { label: "Media", href: "/admin/media" },
   { label: "Contributors", href: "/admin/contributors" },
+  { label: "Staff", href: "/admin/staff" },
   { label: "Categories", href: "/admin/categories" },
   { label: "Sections", href: "/admin/sections" },
   { label: "Publications", href: "/admin/publications" },

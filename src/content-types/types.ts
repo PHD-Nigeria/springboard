@@ -14,6 +14,18 @@ export const CONTENT_TYPES = [
 
 export type ContentType = (typeof CONTENT_TYPES)[number];
 
+/** Plain-language labels for every content type, matching each one's public-facing name as a navigation destination (see the nav-hierarchy migration) rather than the raw database enum spelling. Used anywhere a content type is shown to an editor, e.g. the Content type dropdown and the Content list's Type filter. */
+export const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
+  EDITOR_NOTE: "Editor's Note",
+  ARTICLE: "Article",
+  COMPANY_NEWS: "Company News",
+  EVENT: "Event",
+  STAFF_SPOTLIGHT: "Staff Spotlight",
+  BIRTHDAY: "Staff News / Birthday",
+  HEALTH_TIP: "Healthline (Health Tip)",
+  GALLERY: "Photos of the Quarter (Gallery)",
+};
+
 /** Mirrors the public.content_status enum. */
 export const CONTENT_STATUSES = [
   "draft",

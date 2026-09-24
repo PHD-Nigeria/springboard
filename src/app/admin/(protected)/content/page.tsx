@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { listContent } from "@/lib/admin/queries";
-import { CONTENT_STATUSES, CONTENT_TYPES, type ContentStatus, type ContentType } from "@/content-types/types";
+import { CONTENT_STATUSES, CONTENT_TYPES, CONTENT_TYPE_LABELS, type ContentStatus, type ContentType } from "@/content-types/types";
 import { AdminPageHeader, AdminInput, AdminSelect, AdminButton, StatusBadge } from "@/components/admin/ui";
 import { ContentRowActions } from "@/components/admin/ContentRowActions";
 import { formatContentDate } from "@/lib/content/format";
 
-const FILTERABLE_TYPES = ["ARTICLE", "COMPANY_NEWS"] as const;
+const FILTERABLE_TYPES = ["ARTICLE", "COMPANY_NEWS", "HEALTH_TIP", "GALLERY", "STAFF_SPOTLIGHT", "BIRTHDAY"] as const;
 
 type SearchParams = {
   status?: string;
@@ -89,7 +89,7 @@ export default async function AdminContentListPage({
             <option value="">All types</option>
             {FILTERABLE_TYPES.map((type) => (
               <option key={type} value={type}>
-                {type}
+                {CONTENT_TYPE_LABELS[type]}
               </option>
             ))}
           </AdminSelect>
@@ -122,7 +122,7 @@ export default async function AdminContentListPage({
                   {item.title}
                 </Link>
                 <p className="truncate font-body text-xs text-foreground-muted">
-                  {item.content_type} · {item.content_author?.name ?? "No author"} ·{" "}
+                  {CONTENT_TYPE_LABELS[item.content_type]} · {item.content_author?.name ?? "No author"} ·{" "}
                   {item.content_publication?.title ?? "No publication"}
                 </p>
                 {item.status === "scheduled" && item.publish_at && (

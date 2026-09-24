@@ -452,6 +452,93 @@ export async function getRelatedContent(
   return (data ?? []).map((row) => mapRichContentRow(supabase, row));
 }
 
+export interface PublicStaff {
+  id: string;
+  slug: string;
+  fullName: string;
+  title: string | null;
+  department: string | null;
+  bio: string | null;
+  photoUrl: string | null;
+}
+
+interface RichStaffRow {
+  id: string;
+  slug: string;
+  full_name: string;
+  title: string | null;
+  department: string | null;
+  bio: string | null;
+  staff_photo: { storage_path: string; bucket: "public" | "private" } | null;
+}
+
+function mapStaffRow(supabase: SupabaseClient<Database>, row: RichStaffRow): PublicStaff {
+  return {
+    id: row.id,
+    slug: row.slug,
+    fullName: row.full_name,
+    title: row.title,
+    department: row.department,
+    bio: row.bio,
+    photoUrl: row.staff_photo && row.staff_photo.bucket === "public" ? getPublicUrl(supabase, row.staff_photo.storage_path) : null,
+  };
+}
+
+export interface SpotlightQA {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+/**
+ * The staff member + ordered Q&A behind one STAFF_SPOTLIGHT content row.
+ * SpotlightTemplate/StaffProfile call this by content.id rather than
+ * having every list query (getRecentContent, getContentByCategoryId, ...)
+ * join staff_spotlights, matching the registry's stated design: adding a
+ * content type's real data shouldn't change the generic list-fetching
+ * queries, only that type's own Template/Card. Relies on RLS
+ * (staff_spotlights_select/spotlight_questions_select, both scoped through
+ * the parent content row's own visibility): a spotlight whose content row
+ * an anonymous visitor can't see resolves to null here too.
+ */
+export async function getSpotlightDetail(contentId: string): Promise<{ staff: PublicStaff; questions: SpotlightQA[] } | null> {
+  const supabase = await createClient();
+  const { data: spotlight, error: spotlightError } = await supabase
+    .from("staff_spotlights")
+    .select("id, staff:staff_id ( id, slug, full_name, title, department, bio, staff_photo:photo_media_id ( storage_path, bucket ) )")
+    .eq("content_id", contentId)
+    .maybeSingle()
+    .returns<{ id: string; staff: RichStaffRow | null } | null>();
+  if (spotlightError) throw spotlightError;
+  if (!spotlight || !spotlight.staff) return null;
+
+  const { data: questions, error: questionsError } = await supabase
+    .from("spotlight_questions")
+    .select("id, question, answer")
+    .eq("spotlight_id", spotlight.id)
+    .order("display_order", { ascending: true });
+  if (questionsError) throw questionsError;
+
+  return { staff: mapStaffRow(supabase, spotlight.staff), questions: questions ?? [] };
+}
+
+/**
+ * The staff member(s) linked to one BIRTHDAY (or any future staff-mention)
+ * content row via content_staff, same "own query, not a joined list
+ * fetch" reasoning as getSpotlightDetail above. Relies on RLS
+ * (content_staff_select, scoped through the parent content row).
+ */
+export async function getContentStaff(contentId: string): Promise<PublicStaff[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("content_staff")
+    .select("staff:staff_id ( id, slug, full_name, title, department, bio, staff_photo:photo_media_id ( storage_path, bucket ) )")
+    .eq("content_id", contentId)
+    .returns<{ staff: RichStaffRow | null }[]>();
+  if (error) throw error;
+  return (data ?? []).filter((row): row is { staff: RichStaffRow } => row.staff !== null).map((row) => mapStaffRow(supabase, row.staff));
+}
+
 export interface CategoryInfo {
   id: string;
   slug: string;

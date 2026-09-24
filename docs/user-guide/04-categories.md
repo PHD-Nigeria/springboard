@@ -91,10 +91,18 @@ page:
 
 ![An article page showing the "INSIGHTS" category label above the headline, and a Related Stories block at the bottom](images/03-public-article.png)
 
-Categories don't currently create a browsable listing page of their own
-(there's no "all Insights stories" page a visitor can go to), and they
-aren't used as a search filter — their only two effects are the label
-and the Related Stories list above.
+Eight specific Categories also power a browsable listing page of their
+own: **Company News**, **Articles**, **Staff Spotlight**, **Staff News**,
+**HR Corner**, **Healthline**, **Photos of the Quarter**, and **Games**.
+Each is both a Category here and a destination in the header menu (see
+[Navigation](02-navigation.md)), the page at, for example, `/healthline`
+simply lists every published piece tagged with the Healthline Category,
+most recent first. Giving a piece of content one of these eight
+Categories is what makes it show up on that page; nothing else is
+needed. Any other Category you create doesn't get a listing page of its
+own, and Categories still aren't used as a search filter, their only
+other effects are the small colored label and the Related Stories list
+described above.
 
 ## 7. Important things to know
 

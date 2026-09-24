@@ -3,13 +3,30 @@
 ## 1. What is Navigation?
 
 Navigation is the header menu at the top of every public Springboard
-page — the small set of links (currently **Insights**, **People**, and
-**Search**) sitting next to the SPRINGBOARD wordmark. Navigation controls
-**only those links** — the words visitors click on and where each one
-takes them. It has nothing to do with the articles, sections, or
-categories those links might point at (see
+page, the links sitting next to the SPRINGBOARD wordmark. Navigation
+controls **only those links**, the words visitors click on and where
+each one takes them. It has nothing to do with the articles, sections,
+or categories those links might point at (see
 [Understanding Springboard](01-understanding-springboard.md) if you
 haven't read the note on this).
+
+Menu items come in two kinds:
+
+- A **group heading**, like **People & Culture**, **Company & Business**,
+  or **Engagement & Community**. It isn't a link itself, clicking it
+  opens a dropdown (on desktop) or expands a list (on mobile) showing its
+  items underneath.
+- A **child item** inside a group, or a **standalone item** that isn't in
+  any group, like **Search**. Both are real links a visitor can click.
+
+The current menu is three groups, each with its own items, plus Search
+standing on its own outside every group:
+
+- **People & Culture**, HR Corner, Staff Spotlight, Staff News,
+  Healthline.
+- **Company & Business**, Company News, Articles.
+- **Engagement & Community**, Photos of the Quarter, Games.
+- **Search**, standalone.
 
 ## 2. Why is it important?
 
@@ -40,34 +57,45 @@ you'll see it between **Publications** and **Activity**.
 
 Go to **Navigation** in the Admin menu.
 
-![The Navigation page, listing Insights, People, and Search](images/20-admin-navigation.png)
+Groups are listed first, each followed by its own child items indented
+underneath, then any standalone items after them. Each row shows the
+item's label, its destination, its position (`order`), and whether it's
+internal or external.
 
-Each row shows the item's label, its destination, its position in the
-menu (`order`), and whether it's internal or external.
+### Add a new group heading
 
-### Add a new navigation item
-
-1. Click **New navigation item**.
-2. Fill in:
-   - **Label** — the word visitors see in the menu (e.g. "Careers").
-   - **URL** — where it should go (see the field notes below).
-   - **Display order** — a number; lower numbers appear first (see
-     "Important things to know").
-   - **External link** — tick this only if the URL leaves the Springboard
-     site entirely (see below).
-   - **Visible** — leave ticked to show it in the menu right away, or
-     untick to save it hidden for now.
+1. Click **New top-level item**.
+2. Fill in **Label** (e.g. "Engagement & Community") and **Display
+   order**. Leave **Group** as "None" and leave **URL** blank, a blank
+   URL is what tells Springboard this row is a heading, not a link.
 3. Click **Save**.
 
-![The "New navigation item" form, with Label, URL, Display order, External link, and Visible fields](images/21-admin-navigation-new-form.png)
+### Add a new item inside a group
+
+1. Click **New item in a group**.
+2. Choose which **Group** it belongs to.
+3. Fill in **Label**, **URL** (required for an item inside a group), and
+   **Display order**.
+4. Click **Save**.
+
+### Add a standalone item (not in any group)
+
+Click **New top-level item**, leave **Group** as "None", and fill in a
+real **URL**, this is what makes it a standalone link like Search rather
+than a heading.
+
+Every form also has:
+
+- **External link**, tick this only if the URL leaves the Springboard
+  site entirely (see below).
+- **Visible**, leave ticked to show it right away, or untick to save it
+  hidden for now.
 
 ### Edit an existing item
 
 1. Click **Edit** on the row you want to change.
 2. The same form opens, pre-filled with that item's current values.
 3. Change whatever you need, then click **Save**.
-
-![The edit form for "Insights", pre-filled with its label, URL, and order](images/22-admin-navigation-edit-form.png)
 
 ### Hide an item without deleting it
 
@@ -83,9 +111,11 @@ items, give them each other's number.
 
 ### Delete an item
 
-Click **Delete** on a row. Springboard will tell you nothing else in the
-system depends on this link (nothing does — see below) and offer
-**Delete anyway**. This is permanent.
+Click **Delete** on a row. For a standalone item or a child item,
+Springboard will tell you nothing else depends on it and offer **Delete
+anyway**. **Deleting a group heading also deletes every item inside
+it**, Springboard tells you how many sub-items that would remove first,
+so you can back out instead. Either way, deleting is permanent.
 
 ### Internal vs. external links, and "open in new tab"
 
@@ -103,23 +133,23 @@ system depends on this link (nothing does — see below) and offer
   for a link that takes visitors away from Springboard, so they don't
   lose their place.
 
-The current three items are internal, which is why "External link" and
-"Open in new tab" don't show as ticked on any of them today:
-
-- **Insights** → `/#more-stories` — jumps to the "More Stories" block on
-  the homepage.
-- **People** → `/#people` — jumps to the "People" block on the homepage.
-- **Search** → `/search` — the site's search page.
+Every current item is internal, which is why "External link" and "Open
+in new tab" don't show as ticked on any of them today. The eight child
+items each go to their own listing page (e.g. Healthline goes to
+`/healthline`, see [Categories](04-categories.md) for how a piece of
+content ends up listed there), and Search goes to `/search`.
 
 ![The public search page, reached via the "Search" navigation item](images/02-public-search.png)
 
 ## 5. What happens on the public website?
 
 Whatever is in this list, in this order, with **Visible** ticked, is
-exactly what every visitor sees in the header — on desktop and on
-mobile. There's only one menu; Springboard doesn't maintain a separate
-list for phones. A hidden item disappears from both instantly, and a
-reorder is visible on the very next page load.
+exactly what every visitor sees in the header. There's only one menu;
+Springboard doesn't maintain a separate list for phones, on desktop a
+group opens as a dropdown, on mobile the same group expands in place as
+an accordion, same items, same order, different presentation. A hidden
+item disappears from both instantly, and a reorder is visible on the
+very next page load.
 
 Editing Navigation **never** changes any article, section, or category —
 it only changes which words appear in the menu and where they point.
@@ -129,11 +159,13 @@ it only changes which words appear in the menu and where they point.
 - **Permissions.** Only Editors and Admins can add, edit, hide, reorder,
   or delete navigation items. A Contributor doesn't see the Navigation
   page in the menu at all.
-- **Nothing else depends on a navigation item.** Deleting one is always
-  safe from the system's point of view — no article, image, or
-  contributor record references a navigation item, so there's nothing to
-  "break" elsewhere. The only real risk is a dead link if you mistype a
-  URL, or removing a way visitors expect to get somewhere.
+- **Nothing outside Navigation depends on a navigation item.** No
+  article, image, or contributor record references one, so deleting a
+  standalone or child item is always safe from the rest of the system's
+  point of view. Deleting a group heading is the one exception, it takes
+  its child items with it (see "Delete an item" above). The other real
+  risk either way is a dead link if you mistype a URL, or removing a way
+  visitors expect to get somewhere.
 - **A broken or wrong URL isn't caught automatically.** Springboard
   doesn't check that the address you type actually exists — double-check
   it before saving, especially for external links.

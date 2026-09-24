@@ -234,6 +234,147 @@ export async function getAuthorById(id: string): Promise<AdminAuthorRow | null> 
   };
 }
 
+export interface AdminStaffRow {
+  id: string;
+  slug: string;
+  full_name: string;
+  title: string | null;
+  department: string | null;
+  bio: string | null;
+  photo_media_id: string | null;
+  photoUrl: string | null;
+  is_active: boolean;
+  created_at: string;
+  /** Spotlight + birthday content that reference this person, the same "used by" idea listAuthors' articleCount gives, across both link tables since either can reference staff. */
+  spotlightCount: number;
+  contentMentionCount: number;
+}
+
+/**
+ * The employee directory used for Staff Spotlight and Staff News/Birthday
+ * content (§Phase 2), the same shape/pattern as listAuthors immediately above,
+ * for the same "editor/admin manages a directory of people, not raw ids"
+ * reason, just against `staff` (staff_write requires editor/admin, see the
+ * RLS migration) instead of `authors`.
+ */
+export async function listStaff(search?: string): Promise<AdminStaffRow[]> {
+  const supabase = await createClient();
+  let query = supabase
+    .from("staff")
+    .select("*, staff_photo:photo_media_id ( storage_path, bucket )")
+    .order("full_name", { ascending: true });
+
+  if (search) query = query.ilike("full_name", `%${search}%`);
+
+  const [staffResult, spotlightsResult, contentStaffResult] = await Promise.all([
+    query.returns<
+      (Database["public"]["Tables"]["staff"]["Row"] & {
+        staff_photo: { storage_path: string; bucket: "public" | "private" } | null;
+      })[]
+    >(),
+    supabase.from("staff_spotlights").select("staff_id"),
+    supabase.from("content_staff").select("staff_id"),
+  ]);
+
+  if (staffResult.error) throw staffResult.error;
+  if (spotlightsResult.error) throw spotlightsResult.error;
+  if (contentStaffResult.error) throw contentStaffResult.error;
+
+  const spotlightCounts = countBy((spotlightsResult.data ?? []).map((row) => row.staff_id));
+  const mentionCounts = countBy((contentStaffResult.data ?? []).map((row) => row.staff_id));
+
+  return (staffResult.data ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    full_name: row.full_name,
+    title: row.title,
+    department: row.department,
+    bio: row.bio,
+    photo_media_id: row.photo_media_id,
+    photoUrl: row.staff_photo && row.staff_photo.bucket === "public" ? getPublicUrl(supabase, row.staff_photo.storage_path) : null,
+    is_active: row.is_active,
+    created_at: row.created_at,
+    spotlightCount: spotlightCounts.get(row.id) ?? 0,
+    contentMentionCount: mentionCounts.get(row.id) ?? 0,
+  }));
+}
+
+export async function getStaffById(id: string): Promise<AdminStaffRow | null> {
+  const supabase = await createClient();
+  const [staffResult, spotlightsResult, contentStaffResult] = await Promise.all([
+    supabase
+      .from("staff")
+      .select("*, staff_photo:photo_media_id ( storage_path, bucket )")
+      .eq("id", id)
+      .maybeSingle()
+      .returns<
+        | (Database["public"]["Tables"]["staff"]["Row"] & {
+            staff_photo: { storage_path: string; bucket: "public" | "private" } | null;
+          })
+        | null
+      >(),
+    supabase.from("staff_spotlights").select("id", { count: "exact", head: true }).eq("staff_id", id),
+    supabase.from("content_staff").select("content_id", { count: "exact", head: true }).eq("staff_id", id),
+  ]);
+
+  if (staffResult.error) throw staffResult.error;
+  if (!staffResult.data) return null;
+  const data = staffResult.data;
+
+  return {
+    id: data.id,
+    slug: data.slug,
+    full_name: data.full_name,
+    title: data.title,
+    department: data.department,
+    bio: data.bio,
+    photo_media_id: data.photo_media_id,
+    photoUrl: data.staff_photo && data.staff_photo.bucket === "public" ? getPublicUrl(supabase, data.staff_photo.storage_path) : null,
+    is_active: data.is_active,
+    created_at: data.created_at,
+    spotlightCount: spotlightsResult.count ?? 0,
+    contentMentionCount: contentStaffResult.count ?? 0,
+  };
+}
+
+export interface AdminSpotlightQuestion {
+  id: string;
+  question: string;
+  answer: string;
+  display_order: number;
+}
+
+/** The staff_id + ordered Q&A behind one STAFF_SPOTLIGHT content row. Null if this content row has no staff_spotlights row yet (shouldn't happen for a real spotlight, but a brand-new/malformed row shouldn't 500 the edit page). */
+export async function getSpotlightByContentId(
+  contentId: string
+): Promise<{ spotlightId: string; staffId: string; questions: AdminSpotlightQuestion[] } | null> {
+  const supabase = await createClient();
+  const { data: spotlight, error: spotlightError } = await supabase
+    .from("staff_spotlights")
+    .select("id, staff_id")
+    .eq("content_id", contentId)
+    .maybeSingle();
+  if (spotlightError) throw spotlightError;
+  if (!spotlight) return null;
+
+  const { data: questions, error: questionsError } = await supabase
+    .from("spotlight_questions")
+    .select("id, question, answer, display_order")
+    .eq("spotlight_id", spotlight.id)
+    .order("display_order", { ascending: true });
+  if (questionsError) throw questionsError;
+
+  return { spotlightId: spotlight.id, staffId: spotlight.staff_id, questions: questions ?? [] };
+}
+
+/** The staff members linked to one BIRTHDAY content row via content_staff (role='birthday'), see content_staff's own migration comment for why this is a join table rather than a JSONB array. */
+export async function getContentStaffIds(contentId: string): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("content_staff").select("staff_id").eq("content_id", contentId);
+  if (error) throw error;
+  return (data ?? []).map((row) => row.staff_id);
+}
+
 export interface AdminMediaRow {
   id: string;
   bucket: "public" | "private";

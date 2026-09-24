@@ -8,13 +8,18 @@ made up of blocks (paragraphs, images, quotes, and so on), and everything
 needed to place it on the site: an author, a category, a publication, a
 section, and a cover image.
 
-Springboard is actually built to support several other kinds of content
-too (events, staff spotlights, birthdays, health tips, galleries,
-editor's notes), and you may see some of these already on the public
-site from earlier work — but **only Articles and Company News can
-currently be created or edited from the Admin's Content editor.** If you
-need one of the other types, that isn't something the current Content
-screen supports yet.
+Springboard is actually built to support several other kinds of content:
+Articles, Company News, Health Tips, Galleries, Staff Spotlights, Staff
+News/Birthdays, Events, and Editor's Notes. **Articles, Company News,
+Health Tips, and Galleries share one general-purpose editor** (the one
+this chapter mostly describes, with the block editor body). **Staff
+Spotlights and Staff News/Birthdays each have their own dedicated
+builder instead**, since what they need to capture, a real person from
+the Staff directory, plus either a Q&A list or a month label, doesn't fit
+the block-editor shape. See
+[Staff, Staff Spotlights & Staff News/Birthdays](11-staff-spotlights-birthdays.md)
+for those two. Events and Editor's Notes aren't yet creatable from any
+Admin screen.
 
 ## 2. Why is it important?
 
@@ -55,15 +60,28 @@ Go to **Content** in the Admin menu to work with individual pieces.
 Use **Search**, **Status**, and **Type** at the top to find something,
 or click **New content** to start a new piece.
 
-### Create a new article or company news item
+### What am I creating?
+
+**New content** now opens with a choice, not straight into a form:
+
+- **Staff Spotlight**, opens the dedicated Spotlight builder, see
+  [Staff, Staff Spotlights & Staff News/Birthdays](11-staff-spotlights-birthdays.md).
+- **Staff News / Birthday**, opens the dedicated Birthday builder, same
+  chapter as above.
+- **Add a staff member first**, a shortcut to the Staff directory, useful
+  if the person you want to feature doesn't exist there yet.
+- Everything else (Article, Company News, Healthline, Photos of the
+  Quarter), the general form described below.
+
+### Create a new article, company news, health tip, or gallery item
 
 1. Click **New content**.
 2. Fill in the basics:
    - **Title** and **Slug** (the slug becomes part of the public web
-     address — lowercase letters, numbers, and hyphens only).
-   - **Subtitle** (optional) and **Content type** (Article or Company
-     News).
-   - **Summary / excerpt** — shown in card previews across the site.
+     address, lowercase letters, numbers, and hyphens only).
+   - **Subtitle** (optional) and **Content type**, Article, Company News,
+     Healthline (Health Tip), or Photos of the Quarter (Gallery).
+   - **Summary / excerpt**, shown in card previews across the site.
 3. Choose **Author**, **Category**, **Publication**, and **Section** from
    their dropdowns. (See [Sections](03-sections.md) and
    [Categories](04-categories.md) if you're unsure which is which —
@@ -184,8 +202,10 @@ see [Site Settings](08-site-settings.md).
   an Admin.
 - **Slugs must be unique within a Publication.** Springboard will tell
   you if the one you chose is already taken there.
-- **Only two content types are creatable here today: Article and Company
-  News.** Other content types you might see on the site (events, staff
-  spotlights, etc.) were not created through this screen.
+- **Four content types share this general editor: Article, Company News,
+  Healthline, and Photos of the Quarter.** Staff Spotlight and Staff
+  News/Birthday each have their own builder instead, see
+  [Staff, Staff Spotlights & Staff News/Birthdays](11-staff-spotlights-birthdays.md).
+  Events and Editor's Notes aren't creatable from any Admin screen yet.
 
 Next: [People / Contributors](06-people-contributors.md).

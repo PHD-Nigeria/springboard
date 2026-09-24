@@ -883,6 +883,7 @@ export type Database = {
         | "USER"
         | "SETTINGS"
         | "NAV_ITEM"
+        | "STAFF"
       content_status:
         | "draft"
         | "review"
@@ -1056,6 +1057,7 @@ export const Constants = {
         "USER",
         "SETTINGS",
         "NAV_ITEM",
+        "STAFF",
       ],
       content_status: ["draft", "review", "scheduled", "published", "archived"],
       content_type: [

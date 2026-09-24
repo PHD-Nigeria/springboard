@@ -104,9 +104,4 @@ visible effect of its own.
   the table above reflects how Springboard actually behaves, verified
   directly, not assumed from what a role is called.
 
----
-
-This completes the Springboard Admin & Editorial User Guide. If
-something in the Admin doesn't do what this guide describes, or a button
-doesn't seem to work for your role, that's very likely the permission
-system doing exactly what it's supposed to — not a mistake on your part.
+Next: [Staff, Staff Spotlights & Staff News/Birthdays](11-staff-spotlights-birthdays.md).

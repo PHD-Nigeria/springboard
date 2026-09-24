@@ -29,6 +29,7 @@ for how accounts are set up.
 8. [Site Settings / Homepage](08-site-settings.md)
 9. [Activity](09-activity.md)
 10. [User Management](10-user-management.md)
+11. [Staff, Staff Spotlights & Staff News/Birthdays](11-staff-spotlights-birthdays.md)
 
 This guide is for the *people* using Springboard day to day. For how
 engineers work with the codebase itself, see
