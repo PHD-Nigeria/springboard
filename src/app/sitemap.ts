@@ -22,6 +22,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/search`, changeFrequency: "monthly", priority: 0.3 },
   ];
 
+  // The grouped-navigation landing pages (§1 of the Q2 '26 editorial
+  // upgrade) — static routes, not derived from any query, so they're listed
+  // directly rather than through getSitemapEntries().
+  const categoryLandingSlugs = [
+    "company-news",
+    "articles",
+    "staff-spotlight",
+    "staff-news",
+    "hr-corner",
+    "healthline",
+    "photos-of-the-quarter",
+    "games",
+  ];
+  for (const slug of categoryLandingSlugs) {
+    entries.push({ url: `${base}/${slug}`, changeFrequency: "weekly", priority: 0.6 });
+  }
+
   for (const publication of publications) {
     entries.push({
       url: `${base}/issues/${publication.slug}`,

@@ -10,7 +10,21 @@ import { BlockEditor } from "@/components/admin/BlockEditor";
 import { RevisionPanel } from "@/components/admin/RevisionPanel";
 import type { AdminContentRow } from "@/lib/admin/queries";
 
-const CREATABLE_TYPES = CONTENT_TYPES.filter((type) => type === "ARTICLE" || type === "COMPANY_NEWS");
+/**
+ * EVENT, STAFF_SPOTLIGHT, and BIRTHDAY are deliberately excluded: EVENT's
+ * metadata schema requires an eventDate this generic form has no field for,
+ * and STAFF_SPOTLIGHT/BIRTHDAY's real data lives in dedicated relational
+ * tables (staff_spotlights/spotlight_questions, content_staff) this form
+ * doesn't write to — see each schema's own comment in
+ * src/content-types/schemas. HEALTH_TIP and GALLERY have no required
+ * metadata fields (both schemas are either fully optional or empty), so
+ * they're safe to create through this same generic form: a GALLERY's images
+ * are added afterward as ordinary block-editor images/gallery blocks, same
+ * as any other content's media.
+ */
+const CREATABLE_TYPES = CONTENT_TYPES.filter(
+  (type) => type === "ARTICLE" || type === "COMPANY_NEWS" || type === "HEALTH_TIP" || type === "GALLERY"
+);
 
 interface Option {
   id: string;

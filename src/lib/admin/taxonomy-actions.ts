@@ -134,9 +134,19 @@ export async function deleteCategoryAction(id: string): Promise<TaxonomyActionRe
 }
 
 // ----------------------------------------------------------------- nav_items
-/** Nothing references nav_items (no FK anywhere points at it) — always "no usage," kept only so NavigationManager can reuse SafeDeleteButton like every other manager. */
-export async function getNavItemUsageAction(): Promise<{ count: number }> {
-  return { count: 0 };
+/**
+ * A group heading's children reference it via nav_items.parent_id (`on
+ * delete cascade`) — deleting a group silently takes its children with it,
+ * so unlike the original "nothing references nav_items" version of this
+ * function, that specific case now needs the same warn-before-delete
+ * treatment every other taxonomy manager gets. A standalone item or a leaf
+ * child always reports 0, matching the previous always-safe behavior for
+ * them.
+ */
+export async function getNavItemUsageAction(id: string): Promise<{ count: number }> {
+  const supabase = await createClient();
+  const { count } = await supabase.from("nav_items").select("id", { count: "exact", head: true }).eq("parent_id", id);
+  return { count: count ?? 0 };
 }
 
 export async function saveNavItemAction(formData: FormData): Promise<TaxonomyActionResult> {
@@ -146,13 +156,19 @@ export async function saveNavItemAction(formData: FormData): Promise<TaxonomyAct
 
   const id = nullableString(formData, "id");
   const label = nullableString(formData, "label");
-  const href = nullableString(formData, "href");
-  if (!label || !href) return { error: "Label and URL are required." };
+  // Empty is valid here — it's how a group heading (e.g. "People & Culture")
+  // is distinguished from a real destination; only a sub-item nested under a
+  // group is required to actually go somewhere.
+  const href = nullableString(formData, "href") ?? "";
+  const parentId = nullableString(formData, "parent_id");
+  if (!label) return { error: "Label is required." };
+  if (parentId && !href) return { error: "An item inside a group needs a URL — only a group heading itself can be left blank." };
 
   const isExternal = boolField(formData, "is_external");
   const record = {
     label,
     href,
+    parent_id: parentId,
     display_order: Number(formData.get("display_order") ?? 0) || 0,
     is_visible: boolField(formData, "is_visible"),
     is_external: isExternal,

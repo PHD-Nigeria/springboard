@@ -436,17 +436,19 @@ export type Database = {
           is_visible: boolean
           label: string
           open_in_new_tab: boolean
+          parent_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           display_order?: number
-          href: string
+          href?: string
           id?: string
           is_external?: boolean
           is_visible?: boolean
           label: string
           open_in_new_tab?: boolean
+          parent_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -458,9 +460,18 @@ export type Database = {
           is_visible?: boolean
           label?: string
           open_in_new_tab?: boolean
+          parent_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "nav_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "nav_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

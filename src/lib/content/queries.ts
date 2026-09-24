@@ -452,6 +452,45 @@ export async function getRelatedContent(
   return (data ?? []).map((row) => mapRichContentRow(supabase, row));
 }
 
+export interface CategoryInfo {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+}
+
+export async function getCategoryBySlug(slug: string): Promise<CategoryInfo | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("categories").select("id, slug, name, description").eq("slug", slug).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Published content for one of the grouped-navigation landing pages
+ * (Company News, Articles, HR Corner, ...), by category id — the same
+ * "editorial area" relationship getRelatedContent already reads for the
+ * article page's "Related Stories", just not scoped to excluding one item.
+ * Takes an id rather than a slug (resolve the category first via
+ * getCategoryBySlug) so a landing page can also render the category's own
+ * name/description without a second round trip inside this function.
+ * Relies on RLS (content_select_public) for visibility, same as every other
+ * public query in this file.
+ */
+export async function getContentByCategoryId(categoryId: string, limit = 30): Promise<Content[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("content")
+    .select(RICH_CONTENT_SELECT)
+    .eq("category_id", categoryId)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(limit)
+    .returns<RichContentRow[]>();
+
+  if (error) throw error;
+  return (data ?? []).map((row) => mapRichContentRow(supabase, row));
+}
+
 export interface PublicSiteSettings {
   featuredContentId: string | null;
   featuredAuthorIds: string[];
@@ -524,29 +563,42 @@ export interface PublicNavItem {
   href: string;
   isExternal: boolean;
   openInNewTab: boolean;
+  /** Present (possibly empty) only on a top-level item; a child item never has children of its own — two levels is all this nav supports. */
+  children?: PublicNavItem[];
 }
 
 /**
- * Public header navigation, ordered — nav_items_select's RLS (`using
- * (is_visible)`) is what actually excludes hidden rows for anonymous
- * visitors; this doesn't repeat that filter itself, matching this file's
- * existing rule of trusting RLS rather than a second application-level
- * filter that could drift out of sync (see sitemap.ts's own comment on the
- * same point).
+ * Public header navigation, built into a two-level tree from the flat
+ * nav_items table (parent_id null = top-level; a group heading has one or
+ * more children, a standalone item like Search has none). nav_items_select's
+ * RLS (`using (is_visible)`) is what actually excludes hidden rows for
+ * anonymous visitors; this doesn't repeat that filter itself, matching this
+ * file's existing rule of trusting RLS rather than a second
+ * application-level filter that could drift out of sync (see sitemap.ts's
+ * own comment on the same point). A hidden parent still hides its visible
+ * children here too, since a child with no reachable group heading has
+ * nowhere to render.
  */
 export async function getPublicNavItems(): Promise<PublicNavItem[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("nav_items")
-    .select("id, label, href, is_external, open_in_new_tab")
+    .select("id, parent_id, label, href, is_external, open_in_new_tab")
     .order("display_order", { ascending: true });
   if (error) throw error;
 
-  return (data ?? []).map((row) => ({
+  const rows = data ?? [];
+  const toItem = (row: (typeof rows)[number]): PublicNavItem => ({
     id: row.id,
     label: row.label,
     href: row.href,
     isExternal: row.is_external,
     openInNewTab: row.open_in_new_tab,
-  }));
+  });
+
+  const topLevel = rows.filter((row) => row.parent_id === null);
+  return topLevel.map((row) => {
+    const children = rows.filter((child) => child.parent_id === row.id).map(toItem);
+    return children.length > 0 ? { ...toItem(row), children } : toItem(row);
+  });
 }
