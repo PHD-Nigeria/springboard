@@ -62,6 +62,8 @@ underneath, then any standalone items after them. Each row shows the
 item's label, its destination, its position (`order`), and whether it's
 internal or external.
 
+![The Navigation page, showing the three groups (People & Culture, Company & Business, Engagement & Community) each with their child items indented underneath, and Search standing alone](images/20-admin-navigation.png)
+
 ### Add a new group heading
 
 1. Click **New top-level item**.
@@ -77,6 +79,8 @@ internal or external.
 3. Fill in **Label**, **URL** (required for an item inside a group), and
    **Display order**.
 4. Click **Save**.
+
+![The "New item in a group" form, with Group pre-set to People & Culture, and Label, URL, and Display order fields](images/21-admin-navigation-new-form.png)
 
 ### Add a standalone item (not in any group)
 
@@ -96,6 +100,8 @@ Every form also has:
 1. Click **Edit** on the row you want to change.
 2. The same form opens, pre-filled with that item's current values.
 3. Change whatever you need, then click **Save**.
+
+![Editing "People & Culture": Group is "None" and URL is blank, since a group heading has no destination of its own](images/22-admin-navigation-edit-form.png)
 
 ### Hide an item without deleting it
 
