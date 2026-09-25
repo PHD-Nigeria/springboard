@@ -48,9 +48,17 @@ export function Navigation({ items }: { items: PublicNavItem[] }) {
   // end up with identically-structured markup to what each context
   // rendered before this was data-driven — just swapping which element
   // renders it and adding the safe rel="noopener noreferrer" new-tab case.
-  function renderLink(item: PublicNavItem, className: string, onClick?: () => void) {
+  /**
+   * `hiddenFromTab` covers a desktop dropdown's children now that they're
+   * always mounted (see the prefetch comment below): CSS alone
+   * (invisible/opacity) takes them out of sight and mouse hit-testing, but
+   * not out of keyboard tab order, without this, tabbing through the page
+   * would stop on links from a closed menu the user can't see.
+   */
+  function renderLink(item: PublicNavItem, className: string, onClick?: () => void, hiddenFromTab?: boolean) {
     const isActive = !item.isExternal && pathname === item.href;
     const resolvedClassName = `${className} ${isActive ? "text-foreground" : "text-foreground-muted"}`;
+    const tabIndex = hiddenFromTab ? -1 : undefined;
 
     if (item.isExternal) {
       return (
@@ -60,6 +68,7 @@ export function Navigation({ items }: { items: PublicNavItem[] }) {
           target={item.openInNewTab ? "_blank" : undefined}
           rel={item.openInNewTab ? "noopener noreferrer" : undefined}
           onClick={onClick}
+          tabIndex={tabIndex}
           className={resolvedClassName}
         >
           {item.label}
@@ -74,6 +83,7 @@ export function Navigation({ items }: { items: PublicNavItem[] }) {
         href={item.href}
         aria-current={isActive ? "page" : undefined}
         onClick={onClick}
+        tabIndex={tabIndex}
         className={resolvedClassName}
       >
         {item.label}
@@ -131,17 +141,38 @@ export function Navigation({ items }: { items: PublicNavItem[] }) {
                   inside this div's own border box, so the hoverable region
                   is contiguous with the trigger with no gap to cross.
                 */}
-                {isOpen && (
-                  <div className="absolute top-full left-0 z-50 min-w-48 border border-primary-800 bg-primary-900 pt-3 shadow-lg">
-                    <div className="py-2">
-                      {item.children.map((child) =>
-                        renderLink(child, "block px-4 py-2.5 font-body text-sm tracking-wide transition-colors duration-fast hover:text-secondary-400", () =>
-                          setOpenGroupId(null)
-                        )
-                      )}
-                    </div>
+                {/*
+                  Always rendered (never `{isOpen && (...)}`) so its <Link>
+                  children exist in the DOM, and therefore in Next.js's
+                  automatic viewport-prefetch observer, from the moment the
+                  page loads, not just from the instant a click opens the
+                  menu. A conditionally-mounted dropdown never gives
+                  next/link's IntersectionObserver-based prefetch a chance
+                  to run: measured directly (hover a trigger, watch the
+                  network panel for the ~1-2s before a click) against
+                  production before this change, zero prefetch requests
+                  ever fired. Visibility is CSS-only (invisible/opacity, not
+                  `hidden`/display:none, which would also remove it from
+                  that same observer), so the visual open/close behavior is
+                  unchanged, only the mount timing.
+                */}
+                <div
+                  className={`absolute top-full left-0 z-50 min-w-48 border border-primary-800 bg-primary-900 pt-3 shadow-lg transition-opacity duration-fast ${
+                    isOpen ? "visible opacity-100" : "invisible opacity-0 pointer-events-none"
+                  }`}
+                  aria-hidden={!isOpen}
+                >
+                  <div className="py-2">
+                    {item.children.map((child) =>
+                      renderLink(
+                        child,
+                        "block px-4 py-2.5 font-body text-sm tracking-wide transition-colors duration-fast hover:text-secondary-400",
+                        () => setOpenGroupId(null),
+                        !isOpen
+                      )
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             );
           })}

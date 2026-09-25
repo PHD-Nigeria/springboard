@@ -539,6 +539,34 @@ export async function getContentStaff(contentId: string): Promise<PublicStaff[]>
   return (data ?? []).filter((row): row is { staff: RichStaffRow } => row.staff !== null).map((row) => mapStaffRow(supabase, row.staff));
 }
 
+/**
+ * The same lookup as getContentStaff, batched across every content id a
+ * caller already has in hand (e.g. every BIRTHDAY on one category landing
+ * page), one query instead of one per row. Introduced after measuring
+ * /staff-news specifically: 17 BIRTHDAY cards each independently calling
+ * getContentStaff (via StaffProfile) meant 17 separate content_staff round
+ * trips for a page that only ever needed one `.in()` query. A caller passes
+ * the resolved PublicStaff back down (see StaffProfile's `resolvedStaff`
+ * prop) instead of letting each card re-fetch its own.
+ */
+export async function getContentStaffBatch(contentIds: string[]): Promise<Map<string, PublicStaff>> {
+  const map = new Map<string, PublicStaff>();
+  if (contentIds.length === 0) return map;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("content_staff")
+    .select("content_id, staff:staff_id ( id, slug, full_name, title, department, bio, staff_photo:photo_media_id ( storage_path, bucket ) )")
+    .in("content_id", contentIds)
+    .returns<{ content_id: string; staff: RichStaffRow | null }[]>();
+  if (error) throw error;
+
+  for (const row of data ?? []) {
+    if (row.staff) map.set(row.content_id, mapStaffRow(supabase, row.staff));
+  }
+  return map;
+}
+
 export interface CategoryInfo {
   id: string;
   slug: string;

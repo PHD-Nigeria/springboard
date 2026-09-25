@@ -28,6 +28,16 @@ export async function ArticleTemplate({ content }: { content: Content }) {
       : Promise.resolve([]),
   ]);
 
+  // Same fix as NewsTemplate, and same reasoning: this Hero already shows
+  // content.coverImageUrl, so a body block referencing the same media id
+  // (none of today's real Articles do, but nothing stops a future one from
+  // reusing its cover as its own first body image the way several Company
+  // News/Gallery items already do) would otherwise render it a second
+  // time. Removed from mediaMap only, never from the block's own mediaIds
+  // or the database.
+  const bodyMediaMap = { ...mediaMap };
+  if (content.coverMediaId) delete bodyMediaMap[content.coverMediaId];
+
   const siblingIndex = sectionSiblings.findIndex((item) => item.id === content.id);
   const previous = siblingIndex > 0 ? sectionSiblings[siblingIndex - 1] : null;
   const next =
@@ -57,7 +67,7 @@ export async function ArticleTemplate({ content }: { content: Content }) {
 
       <div className="mx-auto max-w-2xl px-gutter pb-section-md">
         <div className="space-y-6 font-body text-lg leading-relaxed text-foreground [&_blockquote]:border-l-2 [&_blockquote]:border-primary-400 [&_blockquote]:pl-6 [&_blockquote]:italic [&_h2]:font-display [&_h2]:text-2xl [&_h3]:font-display [&_h3]:text-xl">
-          <BlockRenderer blocks={content.body.blocks} mediaMap={mediaMap} relatedContent={relatedContent} />
+          <BlockRenderer blocks={content.body.blocks} mediaMap={bodyMediaMap} relatedContent={relatedContent} />
         </div>
 
         {moreByAuthor.length > 0 && content.author && (

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Content } from "@/content-types/types";
-import { getSpotlightDetail, getContentStaff } from "@/lib/content/queries";
+import { getSpotlightDetail, getContentStaff, type PublicStaff } from "@/lib/content/queries";
 import { MediaFallback, initialsFromName } from "@/components/editorial/MediaFallback";
 
 /**
@@ -16,11 +16,27 @@ import { MediaFallback, initialsFromName } from "@/components/editorial/MediaFal
  * time) rather than re-resolved here, since that part's already correct on
  * the content row.
  */
-export async function StaffProfile({ content }: { content: Content }) {
+export async function StaffProfile({
+  content,
+  resolvedStaff,
+}: {
+  content: Content;
+  /**
+   * Skips this component's own DB call when a caller already resolved the
+   * staff record itself, e.g. CategoryLanding batch-fetching every BIRTHDAY
+   * on /staff-news in one query instead of the 17 separate content_staff
+   * round trips one-per-StaffProfile used to cost. `undefined` (the
+   * default, every other caller) keeps the original self-fetching
+   * behavior; pass `null` explicitly for "resolved, and there's no staff".
+   */
+  resolvedStaff?: PublicStaff | null;
+}) {
   const staff =
-    content.contentType === "STAFF_SPOTLIGHT"
-      ? (await getSpotlightDetail(content.id))?.staff
-      : (await getContentStaff(content.id))[0];
+    resolvedStaff !== undefined
+      ? resolvedStaff
+      : content.contentType === "STAFF_SPOTLIGHT"
+        ? (await getSpotlightDetail(content.id))?.staff
+        : (await getContentStaff(content.id))[0];
 
   const name = staff?.fullName ?? content.title;
   const subtitle = content.contentType === "BIRTHDAY" ? content.summary : staff?.title;

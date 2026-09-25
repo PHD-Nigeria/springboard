@@ -22,6 +22,21 @@ export async function NewsTemplate({ content }: { content: Content }) {
     getNewsBites(3, { excludeContentId: content.id }),
   ]);
 
+  // The Hero above already shows content.coverImageUrl. Several real Q2
+  // items (VST, the OMGWCA piece, Photos of the Quarter) deliberately use
+  // their own lead photo as both the cover AND the first image in a body
+  // gallery/image block, a genuinely valid editorial choice, not bad data,
+  // confirmed by reading the actual production rows before touching
+  // anything. Rendering both was the bug: the same photo appearing twice
+  // on one page. Dropping the cover's id from mediaMap (not from the
+  // block's own mediaIds array, and not from the database) is a pure
+  // render-time fix: BlockRenderer/GalleryBlock already skip any mediaId
+  // that doesn't resolve in mediaMap, so this one entry silently
+  // disappears from the body while every other image, and the source
+  // content and its ordering, stay untouched.
+  const bodyMediaMap = { ...mediaMap };
+  if (content.coverMediaId) delete bodyMediaMap[content.coverMediaId];
+
   return (
     <article>
       <Hero
@@ -36,7 +51,7 @@ export async function NewsTemplate({ content }: { content: Content }) {
 
       <div className="mx-auto max-w-2xl px-gutter pb-section-md">
         <div className="space-y-6 font-body text-lg leading-relaxed text-foreground [&_blockquote]:border-l-2 [&_blockquote]:border-primary-400 [&_blockquote]:pl-6 [&_blockquote]:italic [&_h2]:font-display [&_h2]:text-2xl [&_h3]:font-display [&_h3]:text-xl">
-          <BlockRenderer blocks={content.body.blocks} mediaMap={mediaMap} relatedContent={relatedContent} />
+          <BlockRenderer blocks={content.body.blocks} mediaMap={bodyMediaMap} relatedContent={relatedContent} />
         </div>
       </div>
 
