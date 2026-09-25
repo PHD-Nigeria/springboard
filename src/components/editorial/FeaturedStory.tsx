@@ -33,6 +33,15 @@ export function FeaturedStory({
 }: FeaturedStoryProps) {
   return (
     <Link href={content.href ?? "#"} className="group block">
+      {/*
+        aspect-[16/10] stays (fill needs a real-height box; no uploaded
+        image's intrinsic width/height is ever recorded, see Hero.tsx's
+        identical note). object-contain replaces object-cover so a portrait
+        cover photo is letterboxed inside this box instead of cropped down
+        to whatever slice happens to fit 16:10 — the same "cropped at the
+        neck" failure Hero.tsx had, just on the homepage/category lead
+        story instead of an article's own page.
+      */}
       <div className="relative mb-6 aspect-[16/10] overflow-hidden bg-surface">
         {content.coverImageUrl ? (
           <Image
@@ -41,7 +50,7 @@ export function FeaturedStory({
             fill
             priority={priority}
             sizes={sizes}
-            className="object-cover transition-transform duration-slow ease-out group-hover:scale-[1.02]"
+            className="object-contain transition-transform duration-slow ease-out group-hover:scale-[1.02]"
           />
         ) : (
           <MediaFallback seed={content.id} />

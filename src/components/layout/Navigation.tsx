@@ -114,13 +114,32 @@ export function Navigation({ items }: { items: PublicNavItem[] }) {
                     ▾
                   </span>
                 </button>
+                {/*
+                  pt-3 (not mt-3): the gap between the trigger and the
+                  dropdown has to be part of THIS element's own hoverable
+                  box, not empty space between two separately-hoverable
+                  boxes. The parent div's onMouseLeave above only fires once
+                  the pointer leaves the parent AND every one of its
+                  descendants' rendered areas — but this dropdown is
+                  position:absolute, so it contributes nothing to the
+                  parent's own layout height, and a margin-based gap would
+                  render as page background that belongs to neither the
+                  button nor this div, a dead zone that fires onMouseLeave
+                  the instant the pointer crosses it, closing the menu
+                  before a diagonal mouse movement ever reaches an item.
+                  Padding keeps the exact same 12px of visual space, but
+                  inside this div's own border box, so the hoverable region
+                  is contiguous with the trigger with no gap to cross.
+                */}
                 {isOpen && (
-                  <div className="absolute top-full left-0 z-50 mt-3 min-w-48 border border-primary-800 bg-primary-900 py-2 shadow-lg">
-                    {item.children.map((child) =>
-                      renderLink(child, "block px-4 py-2.5 font-body text-sm tracking-wide transition-colors duration-fast hover:text-secondary-400", () =>
-                        setOpenGroupId(null)
-                      )
-                    )}
+                  <div className="absolute top-full left-0 z-50 min-w-48 border border-primary-800 bg-primary-900 pt-3 shadow-lg">
+                    <div className="py-2">
+                      {item.children.map((child) =>
+                        renderLink(child, "block px-4 py-2.5 font-body text-sm tracking-wide transition-colors duration-fast hover:text-secondary-400", () =>
+                          setOpenGroupId(null)
+                        )
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

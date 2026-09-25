@@ -54,13 +54,40 @@ export function Hero({ title, subtitle, category, imageUrl, imageAlt, fallbackSe
 
       <div className="mx-auto mt-12 max-w-6xl px-gutter">
         <motion.div
+          // aspect-[16/9] stays: next/image's `fill` mode needs a box with a
+          // real height (it fills its positioned ancestor, an absolutely
+          // positioned child can't contribute height to that ancestor
+          // itself), and this codebase never records an uploaded image's
+          // real width/height (see media-actions.ts, every upload path
+          // writes width/height as null — no image-decoding library on the
+          // server), so there's no intrinsic ratio available to size a box
+          // from. What changes below is object-fit: `cover` crops to fill
+          // this box regardless of the source photo's own shape, which is
+          // what was cutting portrait photos off at the neck; `contain`
+          // scales the whole photo to fit inside the box instead, letting a
+          // portrait stay visibly portrait (letterboxed, not cropped) and a
+          // landscape still fill the box edge-to-edge as before.
           className="relative aspect-[16/9] overflow-hidden bg-surface"
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: duration.hero, ease: easing.editorialIn, delay: reduceMotion ? 0 : 0.15 }}
         >
           {imageUrl ? (
-            <Image src={imageUrl} alt={imageAlt ?? title} fill priority sizes="100vw" className="object-cover" />
+            <Image
+              src={imageUrl}
+              alt={imageAlt ?? title}
+              fill
+              priority
+              // Matches this container's real rendered width (max-w-6xl,
+              // 1152px) instead of a blanket 100vw, which was asking the
+              // browser to fetch a full-viewport-width source on any screen
+              // wider than that — the wrong direction for "appropriate
+              // resolution," it wasn't picking something too small, it was
+              // over-fetching on wide desktops while a mid-size viewport
+              // still got a proportionally scaled-down source either way.
+              sizes="(min-width: 1152px) 1152px, 100vw"
+              className="object-contain"
+            />
           ) : (
             <MediaFallback seed={fallbackSeed ?? title} />
           )}
