@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Springboard Compact Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ Tokens ============
+   Five PHD colours, exact. Neutrals are derived and need client approval. */
+:root{
+  --purple:#3A008C; --lime:#9FEA47; --coral:#FF7373; --lavender:#9B83FF; --pink:#FF70F2;
+  --ink:#1A0B3B; --paper:#FFFFFF; --wash:#F4F1F9; --rule:#D5CEE3; --muted:#5B4F72; --ph:#E3DEEC;
+  --head:'Syne',system-ui,sans-serif; --body:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --d-micro:140ms; --d-ui:200ms; --d-reveal:420ms; --ease:cubic-bezier(.2,.7,.2,1);
+  --gutter:20px; --max:1240px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font:14px/1.45 var(--body);color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+a:hover .t,a.t:hover{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px}
+.on-purple :focus-visible{outline-color:var(--lime)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+ul{list-style:none}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gutter)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:8px;top:-60px;background:var(--lime);color:var(--ink);padding:8px 12px;z-index:100;font-weight:600}
+.skip:focus{top:8px}
+
+/* ============ Header ============ */
+.util{background:var(--ink);color:#E9E3F7;font-size:12px}
+.util .wrap{display:flex;justify-content:space-between;align-items:center;height:28px;gap:12px}
+.util b{color:var(--lime);font-weight:600}
+.util a:hover{text-decoration:underline}
+header.mast{background:var(--purple);color:#fff;position:sticky;top:0;z-index:50}
+.mast .wrap{display:flex;align-items:center;height:52px;gap:28px}
+.logo{font:800 22px/1 var(--head);letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.logo i{width:10px;height:10px;background:var(--lime);display:inline-block}
+nav.primary{flex:1}
+nav.primary>ul{display:flex;gap:2px;height:52px}
+nav.primary>ul>li{position:relative;display:flex}
+.nav-btn,.nav-link{display:flex;align-items:center;gap:6px;padding:0 12px;font-weight:600;font-size:13.5px;height:100%;transition:background var(--d-micro)}
+.nav-btn:hover,.nav-link:hover,.nav-btn[aria-expanded=true]{background:rgba(255,255,255,.12)}
+.nav-btn svg{width:9px;height:9px;transition:transform var(--d-micro)}
+.nav-btn[aria-expanded=true] svg{transform:rotate(180deg)}
+.drop{position:absolute;left:0;top:100%;min-width:220px;background:var(--paper);color:var(--ink);border-top:3px solid var(--lime);box-shadow:0 8px 20px rgba(26,11,59,.18);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity var(--d-micro),transform var(--d-micro),visibility 0s var(--d-micro)}
+.drop.open{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+.drop a{display:block;padding:9px 14px;font-size:13.5px;border-bottom:1px solid var(--rule)}
+.drop a:last-child{border:0}
+.drop a:hover{background:var(--wash)}
+.mast .tools{display:flex;gap:4px;margin-left:auto}
+.icon-btn{height:52px;padding:0 12px;display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
+.icon-btn:hover{background:rgba(255,255,255,.12)}
+.menu-toggle{display:none}
+
+/* ============ Section scaffolding ============ */
+.sec{padding:22px 0;border-top:1px solid var(--rule)}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
+.sec-h h2{font:700 15px/1 var(--head);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:8px}
+.sec-h h2::before{content:"";width:8px;height:8px;background:var(--mark,var(--purple))}
+.sec-h a{font-size:12.5px;font-weight:600;color:var(--purple)}
+.sec-h a:hover{text-decoration:underline}
+.cat{font:600 11px/1 var(--body);text-transform:uppercase;letter-spacing:.07em;display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.cat::before{content:"";width:7px;height:7px;background:var(--mark,var(--purple))}
+.meta{font-size:12px;color:var(--muted)}
+.meta .q{font-weight:600;color:var(--purple)}
+h3.t,h3{font:700 16px/1.25 var(--head);letter-spacing:-.005em}
+.sum{font-size:13.5px;color:var(--muted);margin-top:4px}
+.m-lav{--mark:var(--lavender)} .m-coral{--mark:var(--coral)} .m-pink{--mark:var(--pink)} .m-lime{--mark:var(--lime)} .m-purple{--mark:var(--purple)}
+
+/* ============ Placeholders (neutral, labelled, never passed off as photos) ============ */
+.ph{position:relative;background:var(--ph);overflow:hidden;display:block}
+.ph::after{content:attr(data-label);position:absolute;left:6px;bottom:5px;font-size:10px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
+.r169{aspect-ratio:16/9}.r43{aspect-ratio:4/3}.r32{aspect-ratio:3/2}.r11{aspect-ratio:1}.r34{aspect-ratio:3/4}.r1610{aspect-ratio:16/10}
+.reveal{opacity:0;transition:opacity var(--d-reveal) var(--ease)}
+.reveal.in{opacity:1}
+
+/* ============ Featured video component ============ */
+.video-feature .stage{position:relative;background:var(--ink);aspect-ratio:16/9;color:#fff;overflow:hidden}
+.video-feature .poster{position:absolute;inset:0;background:#2A1A55;display:flex;align-items:center;justify-content:center}
+.video-feature .poster span.lbl{position:absolute;left:10px;top:10px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:var(--lime);color:var(--ink);padding:3px 6px;font-weight:700}
+.video-feature .poster small{position:absolute;left:10px;bottom:46px;font-size:11px;color:#CFC6E6}
+.play{width:64px;height:64px;background:var(--lime);color:var(--ink);display:flex;align-items:center;justify-content:center;transition:transform var(--d-ui) var(--ease)}
+.play svg{width:24px;height:24px;margin-left:3px}
+.video-feature .stage:hover .play{transform:scale(1.06)}
+.play[disabled]{background:#8F86A8;cursor:not-allowed}
+.stage:hover .play[disabled]{transform:none}
+.vbar{position:absolute;left:0;right:0;bottom:0;height:36px;background:rgba(26,11,59,.92);display:flex;align-items:center;gap:10px;padding:0 10px;font-size:12px}
+.vbar button{width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.vbar button[disabled]{opacity:.45;cursor:not-allowed}
+.vbar svg{width:14px;height:14px;fill:currentColor}
+.vbar .track{flex:1;height:3px;background:#5B4F72}
+.vbar .time{font-variant-numeric:tabular-nums;color:#CFC6E6}
+.video-feature iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.video-feature .cap{display:grid;grid-template-columns:1fr;gap:3px;padding-top:10px}
+.video-feature .cap h3{font-size:22px;line-height:1.15}
+.video-feature .cap p{color:var(--muted);font-size:13.5px}
+.video-feature[data-orientation=portrait] .stage{aspect-ratio:9/16;max-height:520px;margin:0 auto}
+
+/* ============ Hero ============ */
+.hero{padding:16px 0 20px}
+.hero-grid{display:grid;grid-template-columns:minmax(0,8fr) minmax(0,4fr);gap:24px}
+.edition-box{border-top:3px solid var(--purple);background:var(--wash);padding:12px 14px}
+.edition-box .kicker{display:flex;justify-content:space-between;align-items:center;font:700 11px/1 var(--body);letter-spacing:.07em;text-transform:uppercase}
+.edition-box .kicker b{background:var(--lime);padding:3px 6px;color:var(--ink)}
+.edition-box h2{font:800 21px/1.1 var(--head);margin:8px 0 3px}
+.edition-box .counts{font-size:12px;color:var(--muted)}
+.edition-box .go{display:inline-block;margin-top:8px;font-weight:600;font-size:13px;color:var(--purple)}
+.edition-box .go:hover{text-decoration:underline}
+.stack{margin-top:10px}
+.row{display:grid;grid-template-columns:84px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--rule);align-items:start}
+.row:last-child{border:0}
+.row h3{font-size:14.5px;line-height:1.25;margin-top:3px}
+.row .meta{margin-top:3px}
+
+/* ticker */
+.bites{background:var(--ink);color:#fff}
+.bites .wrap{display:flex;align-items:center;gap:14px;height:38px;overflow:hidden}
+.bites b{background:var(--lime);color:var(--ink);font:700 11px/1 var(--body);text-transform:uppercase;letter-spacing:.07em;padding:5px 7px;flex:none}
+.bites ul{display:flex;gap:26px;overflow:hidden;white-space:nowrap;font-size:13px;flex:1}
+.bites li span{color:#BDB2DD;margin-right:6px;font-size:12px}
+.bites a:hover{text-decoration:underline}
+
+/* ============ Section layouts (deliberately different) ============ */
+.feat{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,3fr) minmax(0,3fr);gap:24px}
+.feat .lead h3{font-size:26px;line-height:1.12;margin:8px 0 4px}
+.feat .col>*+*{margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+.feat .col h3{font-size:15px}
+.feat .brief h3{font-size:14.5px}
+
+.recent{display:grid;grid-template-columns:1fr 1fr;column-gap:32px}
+.recent .row{grid-template-columns:132px 1fr;padding:12px 0}
+.recent .row h3{font-size:16px}
+.recent .row:nth-last-child(-n+2){border-bottom:0}
+
+.people{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,4.4fr) minmax(0,3fr);gap:24px;align-items:start}
+.spot h3{font-size:19px;margin:8px 0 3px}
+.spot .quote{border-left:3px solid var(--pink);padding-left:10px;margin-top:8px;font-style:italic;font-size:13.5px}
+.tip{background:var(--lavender);color:var(--ink);padding:14px}
+.tip .cat{color:var(--ink)}.tip .cat::before{background:var(--ink)}
+.tip h3{margin:6px 0 4px;font-size:17px}
+.tip p{font-size:13.5px}
+
+.table .tr{display:grid;grid-template-columns:150px 1fr 90px 90px;gap:16px;padding:9px 0;border-bottom:1px solid var(--rule);align-items:baseline}
+.table .tr:first-child{border-top:1px solid var(--ink)}
+.table .tr h3{font-size:15px}
+.table .tr:hover{background:var(--wash)}
+.table .th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+
+.mosaic{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:92px;gap:6px}
+.mosaic .a{grid-column:span 3;grid-row:span 3}
+.mosaic .b{grid-column:span 3;grid-row:span 2}
+.mosaic .c{grid-column:span 1;grid-row:span 1}
+.mosaic .d{grid-column:span 2;grid-row:span 1}
+.mosaic .ph{height:100%}
+.mosaic a{position:relative;display:block}
+.mosaic a .ph{transition:filter var(--d-ui)}
+.mosaic a:hover .ph{filter:brightness(.93)}
+.mosaic .cap{position:absolute;left:0;right:0;bottom:0;background:rgba(26,11,59,.88);color:#fff;font-size:12px;padding:5px 8px}
+.mosaic .ph::after{bottom:auto;top:5px}
+
+.shorts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--ink)}
+.shorts li{padding:10px 14px 10px 0;margin-right:14px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.shorts li:nth-child(4n){border-right:0;margin-right:0}
+.shorts h3{font:600 13.5px/1.3 var(--body);margin-top:4px}
+
+/* ============ Archive ============ */
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{padding:5px 10px;border:1px solid var(--ink);font-size:12.5px;font-weight:600;transition:background var(--d-micro),color var(--d-micro)}
+.chip:hover{background:var(--wash)}
+.chip[aria-pressed=true]{background:var(--purple);border-color:var(--purple);color:#fff}
+.chip.year{border-color:var(--rule);background:var(--wash)}
+.chip.year[aria-pressed=true]{background:var(--ink);border-color:var(--ink)}
+.chip small{font-weight:400;opacity:.8;margin-left:3px}
+.arch-grid{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:28px}
+.ed-list li{display:grid;grid-template-columns:56px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule);align-items:center}
+.ed-list li[aria-current=true]{background:var(--wash);box-shadow:inset 3px 0 var(--purple);padding-left:8px}
+.ed-list .code{font:800 15px/1 var(--head);color:var(--purple)}
+.ed-list h3{font-size:14px}
+.res-count{font-size:12px;color:var(--muted);margin-bottom:4px}
+.res .row{grid-template-columns:96px 1fr}
+
+/* ============ Footer ============ */
+footer{background:var(--purple);color:#fff;margin-top:24px;font-size:13px}
+footer .wrap{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:24px;padding-top:24px;padding-bottom:24px}
+footer h4{font:700 11px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--lime);margin-bottom:10px}
+footer li{margin-bottom:6px}
+footer a:hover{text-decoration:underline}
+.fine{border-top:1px solid rgba(255,255,255,.25);padding:10px 0;font-size:12px;color:#D9CCF5}
+
+.proto-note{background:var(--lime);color:var(--ink);font-size:12px;padding:6px 0}
+.proto-note .wrap{display:flex;gap:8px}
+
+/* ============ Responsive ============ */
+@media (max-width:1000px){
+  .hero-grid,.arch-grid{grid-template-columns:1fr}
+  .feat{grid-template-columns:1fr 1fr}.feat .lead{grid-column:1/-1}
+  .people{grid-template-columns:1fr 1fr}.people .tip{grid-column:1/-1}
+  .shorts{grid-template-columns:1fr 1fr}.shorts li:nth-child(4n){border-right:1px solid var(--rule);margin-right:14px}.shorts li:nth-child(2n){border-right:0;margin-right:0}
+  footer .wrap{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  :root{--gutter:14px}
+  .menu-toggle{display:flex}
+  nav.primary{position:fixed;inset:80px 0 0 0;top:var(--navtop,80px);background:var(--purple);overflow:auto;transform:translateX(100%);visibility:hidden;transition:transform var(--d-ui) var(--ease),visibility 0s var(--d-ui);padding:8px 0}
+  nav.primary.open{transform:none;visibility:visible;transition-delay:0s}
+  nav.primary>ul{flex-direction:column;height:auto}
+  nav.primary>ul>li{flex-direction:column}
+  .nav-btn,.nav-link{height:46px;padding:0 var(--gutter);justify-content:space-between;font-size:15px}
+  .drop{position:static;opacity:1;visibility:visible;transform:none;display:none;box-shadow:none;background:rgba(0,0,0,.18);color:#fff;border-top:0}
+  .drop.open{display:block}
+  .drop a{padding:10px calc(var(--gutter) + 12px);border-color:rgba(255,255,255,.12)}
+  .drop a:hover{background:rgba(255,255,255,.08)}
+  .mast .wrap{gap:8px}
+  .util .hide-s{display:none}
+  .video-feature .cap h3{font-size:19px}
+  .recent{grid-template-columns:1fr}.recent .row:nth-last-child(2){border-bottom:1px solid var(--rule)}
+  .recent .row{grid-template-columns:104px 1fr}
+  .feat{grid-template-columns:1fr}.feat .lead h3{font-size:22px}
+  .people{grid-template-columns:1fr}
+  .table .tr{grid-template-columns:1fr auto;gap:2px 12px}.table .tr .th-cat{grid-column:1/-1}.table .tr .th-q{display:none}.table .th-row{display:none}
+  .mosaic{grid-template-columns:repeat(4,1fr);grid-auto-rows:70px}
+  .mosaic .a{grid-column:span 4;grid-row:span 3}.mosaic .b{grid-column:span 4;grid-row:span 2}.mosaic .c{grid-column:span 2}.mosaic .d{grid-column:span 2}
+  .shorts{grid-template-columns:1fr}.shorts li,.shorts li:nth-child(2n){border-right:0;margin-right:0}
+  footer .wrap{grid-template-columns:1fr}
+  .bites ul li:nth-child(n+2){display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:0.01ms!important;animation:none!important}
+  .reveal{opacity:1}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<div class="proto-note" role="region" aria-label="Prototype notice"><div class="wrap"><b>Review prototype</b><span>Compact homepage. All stories, names and counts are fictional. Grey boxes are labelled image placeholders, not photography. No video has been supplied.</span></div></div>
+
+<div class="util on-purple" role="region" aria-label="Edition and date"><div class="wrap">
+  <span><b>Latest edition</b> · <a href="#archive" data-edition="2026-Q3">2026 Q3 (Jul–Sep)</a></span>
+  <span class="hide-s"><span id="today">Thursday 29 October 2026</span></span>
+</div></div>
+
+<header class="mast on-purple"><div class="wrap">
+  <a class="logo" href="#top" aria-label="Springboard home"><i></i>Springboard</a>
+  <button class="icon-btn menu-toggle" id="menuBtn" aria-expanded="false" aria-controls="primaryNav">Menu</button>
+  <nav class="primary" id="primaryNav" aria-label="Primary">
+    <ul id="navList"></ul>
+  </nav>
+  <div class="tools"><a class="icon-btn" href="#search" aria-label="Search">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13l5 5"/></svg><span class="hide-s">Search</span></a></div>
+</div></header>
+
+<div class="bites on-purple" role="region" aria-label="News bites ticker"><div class="wrap">
+  <b>News bites</b>
+  <ul id="ticker"></ul>
+</div></div>
+
+<main id="main">
+<h1 class="sr">Springboard, PHD Nigeria internal publication</h1>
+<div id="top"></div>
+
+<!-- ============ HERO: featured video + latest edition ============ -->
+<section class="hero" aria-labelledby="h-hero">
+ <h2 class="sr" id="h-hero">Featured video and latest edition</h2>
+ <div class="wrap hero-grid">
+  <!-- Video-content component. Data comes from an editorially selected video record. -->
+  <article class="video-feature" id="featuredVideo" data-provider="youtube" data-video-id="" data-orientation="landscape" aria-labelledby="vf-title">
+    <div class="stage">
+      <div class="poster" id="vfPoster">
+        <span class="lbl">Featured video</span>
+        <button class="play" id="vfPlay" aria-label="Play video" disabled>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>
+        </button>
+        <small id="vfState">No video supplied yet · 16:9 thumbnail slot</small>
+      </div>
+      <div class="vbar" aria-label="Playback controls (inactive until a video is supplied)">
+        <button disabled aria-label="Play"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></button>
+        <span class="time">0:00</span>
+        <span class="track" aria-hidden="true"></span>
+        <span class="time">0:00</span>
+        <button disabled aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z"/></svg></button>
+        <button disabled aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg></button>
+      </div>
+    </div>
+    <div class="cap">
+      <span class="cat m-lime">Featured video · 2026 Q3</span>
+      <h3 id="vf-title">Sample video title appears here</h3>
+      <p>Caption of one or two lines, written by the editor. Placeholder text only.</p>
+    </div>
+  </article>
+
+  <section aria-label="Latest edition">
+    <div class="edition-box">
+      <div class="kicker"><span>Latest edition</span><b>2026 Q3</b></div>
+      <h2>July – September 2026</h2>
+      <p class="counts" id="edCounts"></p>
+      <a class="go" href="#archive" data-edition="2026-Q3">Open this edition →</a>
+    </div>
+    <ul class="stack" id="heroList"></ul>
+  </section>
+ </div>
+</section>
+
+<!-- ============ Latest edition feature ============ -->
+<section class="sec" aria-labelledby="h-feat" style="--mark:var(--purple)">
+ <div class="wrap">
+  <div class="sec-h"><h2 id="h-feat">From the 2026 Q3 edition</h2><a href="#archive" data-edition="2026-Q3">All 2026 Q3 stories</a></div>
+  <div class="feat" id="feat"></div>
+ </div>
+</section>
+
+<!-- ============ Recent stories ============ -->
+<section class="sec" aria-labelledby="h-recent" style="--mark:var(--coral)">
+ <div class="wrap">
+  <div class="sec-h"><h2 id="h-recent">Recent stories</h2><a href="#archive">Browse archive</a></div>
+  <ul class="recent" id="recent"></ul>
+ </div>
+</section>
+
+<!-- ============ People & Culture ============ -->
+<section class="sec" aria-labelledby="h-people" style="--mark:var(--pink)">
+ <div class="wrap">
+  <div class="sec-h"><h2 id="h-people">People &amp; Culture</h2><a href="#">Staff Spotlight · Staff News · Healthline</a></div>
+  <div class="people" id="people"></div>
+ </div>
+</section>
+
+<!-- ============ Company & Business ============ -->
+<section class="sec" aria-labelledby="h-co" style="--mark:var(--lavender)">
+ <div class="wrap">
+  <div class="sec-h"><h2 id="h-co">Company &amp; Business</h2><a href="#">Company News · Articles</a></div>
+  <div class="table" id="co"></div>
+ </div>
+</section>
+
+<!-- ============ Photos of the quarter ============ -->
+<section class="sec" aria-labelledby="h-photos" style="--mark:var(--lime)">
+ <div class="wrap">
+  <div class="sec-h"><h2 id="h-photos">Photos of the Quarter · 2026 Q3</h2><a href="#">Open gallery</a></div>
+  <div class="mosaic" id="mosaic"></div>
+ </div>
+</section>
+
+<!-- ============ Short-form ============ -->
+<section class="sec" aria-labelledby="h-short" style="--mark:var(--coral)">
+ <div class="wrap">
+  <div class="sec-h"><h2 id="h-short">Short updates</h2><a href="#">All updates</a></div>
+  <ul class="shorts" id="shorts"></ul>
+ </div>
+</section>
+
+<!-- ============ Quarterly archive ============ -->
+<section class="sec" id="archive" aria-labelledby="h-arch" style="--mark:var(--purple)">
+ <div class="wrap">
+  <div class="sec-h"><h2 id="h-arch">Quarterly archive</h2><span class="meta">Generated from published editions</span></div>
+  <div class="filters" id="filters" role="group" aria-label="Filter by quarter"></div>
+  <div class="arch-grid">
+    <div><h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px" id="h-eds">Editions</h3><ul class="ed-list" id="edList" aria-labelledby="h-eds"></ul></div>
+    <div class="res"><p class="res-count" id="resCount" role="status" aria-live="polite"></p><ul id="results"></ul></div>
+  </div>
+ </div>
+</section>
+</main>
+
+<footer class="on-purple">
+ <div class="wrap">
+  <div><div class="logo" style="margin-bottom:8px"><i></i>Springboard</div><p style="max-width:34ch;color:#D9CCF5">PHD Nigeria's internal publication. Footer links come from the CMS.</p></div>
+  <div><h4>Read</h4><ul><li><a href="#">Latest edition</a></li><li><a href="#archive">Archive</a></li><li><a href="#">Photos of the Quarter</a></li></ul></div>
+  <div><h4>People</h4><ul><li><a href="#">Staff Spotlight</a></li><li><a href="#">HR Corner</a></li><li><a href="#">Healthline</a></li></ul></div>
+  <div><h4>Business</h4><ul><li><a href="#">Company News</a></li><li><a href="#">Articles</a></li><li><a href="#">Contributors</a></li></ul></div>
+ </div>
+ <div class="wrap fine">© PHD Nigeria · Prototype</div>
+</footer>
+
+<script>
+/* ================= Fictional fixtures. Mirror real shapes: publication edition + content + nav_items ================= */
+const NAV=[
+ {l:'People & Culture',c:[['HR Corner','/hr-corner'],['Staff Spotlight','/staff-spotlight'],['Staff News','/staff-news'],['Healthline','/healthline']]},
+ {l:'Company & Business',c:[['Company News','/company-news'],['Articles','/articles']]},
+ {l:'Engagement & Community',c:[['Photos of the Quarter','/photos-of-the-quarter'],['Games','/games']]}
+];
+const EDITIONS=[
+ {code:'2026-Q4',title:'October – December 2026',status:'draft'},
+ {code:'2026-Q3',title:'July – September 2026',status:'published'},
+ {code:'2026-Q2',title:'April – June 2026',status:'published'},
+ {code:'2026-Q1',title:'January – March 2026',status:'published'},
+ {code:'2025-Q4',title:'October – December 2025',status:'published'},
+ {code:'2025-Q3',title:'July – September 2025',status:'published'}
+];
+// type: ARTICLE, COMPANY_NEWS, STAFF_SPOTLIGHT, HEALTH_TIP, EVENT, GALLERY, BIRTHDAY, EDITOR_NOTE
+const S=[
+ {id:1,t:'Sample headline: Lagos team wins regional planning award',s:'Two-line summary of the story goes here in the editor\'s words.',ty:'COMPANY_NEWS',ed:'2026-Q3',d:'24 Sep',a:'Sample Author'},
+ {id:2,t:'Sample headline: A day inside the new client briefing room',s:'Summary placeholder, roughly one hundred and twenty characters long.',ty:'ARTICLE',ed:'2026-Q3',d:'19 Sep'},
+ {id:3,t:'Sample headline: Quarterly town hall, what was decided',s:'Summary placeholder for a short company news item.',ty:'COMPANY_NEWS',ed:'2026-Q3',d:'12 Sep'},
+ {id:4,t:'Sample headline: Staff Spotlight with a planning lead',s:'Summary placeholder for a staff profile.',ty:'STAFF_SPOTLIGHT',ed:'2026-Q3',d:'05 Sep',q:'A short pull-quote from the profile appears here.'},
+ {id:5,t:'Sample headline: Five habits for a lighter workweek',s:'Healthline tip summary placeholder.',ty:'HEALTH_TIP',ed:'2026-Q3',d:'30 Aug'},
+ {id:6,t:'Sample headline: What measurement means for the next quarter',s:'Summary placeholder for an article.',ty:'ARTICLE',ed:'2026-Q3',d:'22 Aug'},
+ {id:7,t:'Sample headline: Office move, what changes on Monday',s:'Summary placeholder for company news.',ty:'COMPANY_NEWS',ed:'2026-Q3',d:'14 Aug'},
+ {id:8,t:'Sample headline: Team offsite photo story',s:'Gallery placeholder.',ty:'GALLERY',ed:'2026-Q3',d:'08 Aug'},
+ {id:9,t:'Sample headline: Staff birthdays this month',s:'',ty:'BIRTHDAY',ed:'2026-Q3',d:'01 Aug'},
+ {id:10,t:'Sample headline: Mid-year results in brief',s:'Summary placeholder.',ty:'COMPANY_NEWS',ed:'2026-Q2',d:'27 Jun'},
+ {id:11,t:'Sample headline: Staff Spotlight with a finance partner',s:'Summary placeholder.',ty:'STAFF_SPOTLIGHT',ed:'2026-Q2',d:'10 Jun'},
+ {id:12,t:'Sample headline: Hybrid working, one year on',s:'Summary placeholder.',ty:'ARTICLE',ed:'2026-Q2',d:'28 May'},
+ {id:13,t:'Sample headline: Editor\'s note, April',s:'Summary placeholder.',ty:'EDITOR_NOTE',ed:'2026-Q2',d:'03 Apr'},
+ {id:14,t:'Sample headline: Q1 in pictures',s:'Gallery placeholder.',ty:'GALLERY',ed:'2026-Q1',d:'28 Mar'},
+ {id:15,t:'Sample headline: New hires, January cohort',s:'Summary placeholder.',ty:'COMPANY_NEWS',ed:'2026-Q1',d:'15 Jan'},
+ {id:16,t:'Sample headline: Year-end party recap',s:'Summary placeholder.',ty:'EVENT',ed:'2025-Q4',d:'19 Dec'},
+ {id:17,t:'Sample headline: Healthline, sleep and screens',s:'Summary placeholder.',ty:'HEALTH_TIP',ed:'2025-Q4',d:'20 Nov'},
+ {id:18,t:'Sample headline: Where the agency goes next',s:'Summary placeholder.',ty:'ARTICLE',ed:'2025-Q3',d:'14 Sep'},
+ {id:19,t:'Sample headline: How to book a meeting room',s:'Evergreen how-to, belongs to no edition.',ty:'ARTICLE',ed:null,ev:true,d:'—'},
+ {id:20,t:'Sample headline: Hidden. Published story inside a draft edition',s:'Must not appear anywhere.',ty:'ARTICLE',ed:'2026-Q4',d:'27 Oct'}
+];
+const TYPE={ARTICLE:['Article','m-purple'],COMPANY_NEWS:['Company News','m-lav'],STAFF_SPOTLIGHT:['Staff Spotlight','m-pink'],HEALTH_TIP:['Healthline','m-lime'],EVENT:['Event','m-coral'],GALLERY:['Gallery','m-lime'],BIRTHDAY:['Birthdays','m-pink'],EDITOR_NOTE:['Editor\'s note','m-coral']};
+const BITES=[['29 Oct','Sample update: IT maintenance window on Saturday'],['27 Oct','Sample update: Welcome to our newest colleagues'],['24 Oct','Sample update: Library of campaign case studies refreshed'],['20 Oct','Sample update: Reminder to complete the annual training']];
+
+/* Embargo rule (matches the proposed M3): content in a non-published edition is never listed. */
+const pubEd=new Set(EDITIONS.filter(e=>e.status==='published').map(e=>e.code));
+const VIS=S.filter(s=>s.ev||pubEd.has(s.ed));
+const label=c=>c? c.replace('-',' ') : 'Evergreen';
+const $=id=>document.getElementById(id);
+const esc=x=>String(x).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const ph=(r,l)=>`<span class="ph ${r} reveal" data-label="${l}"></span>`;
+const meta=s=>`<div class="meta"><span class="q">${label(s.ed)}</span> · ${s.d}</div>`;
+const cat=s=>`<span class="cat ${TYPE[s.ty][1]}">${TYPE[s.ty][0]}</span>`;
+const card=(s,r,l)=>`<a href="#s${s.id}" class="item">${ph(r,l)}<div>${cat(s)}<h3><span class="t">${esc(s.t)}</span></h3>${meta(s)}</div></a>`;
+
+/* Nav */
+const nav=$('navList');
+NAV.forEach((g,i)=>{
+  nav.insertAdjacentHTML('beforeend',`<li><button class="nav-btn" aria-expanded="false" aria-controls="dd${i}">${g.l}<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3l4 4 4-4"/></svg></button><div class="drop" id="dd${i}">${g.c.map(c=>`<a href="#${c[1]}">${c[0]}</a>`).join('')}</div></li>`);
+});
+nav.insertAdjacentHTML('beforeend','<li><a class="nav-link" href="#archive">Archive</a></li>');
+const btns=[...nav.querySelectorAll('.nav-btn')];
+const closeAll=(except)=>btns.forEach(b=>{if(b!==except){b.setAttribute('aria-expanded','false');$(b.getAttribute('aria-controls')).classList.remove('open')}});
+btns.forEach(b=>{
+  const dd=$(b.getAttribute('aria-controls'));
+  const set=o=>{b.setAttribute('aria-expanded',o);dd.classList.toggle('open',o)};
+  b.addEventListener('click',()=>{const o=b.getAttribute('aria-expanded')!=='true';closeAll(b);set(o)});
+  b.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();set(true);dd.querySelector('a').focus()}});
+  dd.addEventListener('keydown',e=>{
+    const as=[...dd.querySelectorAll('a')],i=as.indexOf(document.activeElement);
+    if(e.key==='ArrowDown'){e.preventDefault();as[(i+1)%as.length].focus()}
+    if(e.key==='ArrowUp'){e.preventDefault();as[(i-1+as.length)%as.length].focus()}
+    if(e.key==='Escape'){set(false);b.focus()}
+  });
+  b.parentElement.addEventListener('mouseenter',()=>{if(matchMedia('(min-width:761px)').matches){closeAll(b);set(true)}});
+  b.parentElement.addEventListener('mouseleave',()=>{if(matchMedia('(min-width:761px)').matches)set(false)});
+});
+document.addEventListener('click',e=>{if(!e.target.closest('nav.primary'))closeAll()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();if(menuOpen)toggleMenu(false)}});
+const menuBtn=$('menuBtn'),pn=$('primaryNav');let menuOpen=false;
+function toggleMenu(o){menuOpen=o;menuBtn.setAttribute('aria-expanded',o);pn.classList.toggle('open',o);menuBtn.textContent=o?'Close':'Menu';
+  pn.style.setProperty('--navtop',document.querySelector('header.mast').getBoundingClientRect().bottom+'px');document.body.style.overflow=o?'hidden':''}
+menuBtn.addEventListener('click',()=>toggleMenu(!menuOpen));
+pn.addEventListener('click',e=>{if(e.target.closest('.drop a, .nav-link'))toggleMenu(false)});
+
+/* Ticker */
+$('ticker').innerHTML=BITES.map(b=>`<li><span>${b[0]}</span><a href="#">${esc(b[1])}</a></li>`).join('');
+
+/* Hero list + counts */
+const q3=VIS.filter(s=>s.ed==='2026-Q3');
+$('edCounts').textContent=`${q3.length} items · 1 gallery · 0 videos supplied`;
+$('heroList').innerHTML=q3.slice(0,4).map(s=>`<li class="row"><a href="#s${s.id}" style="display:contents">${ph('r43','4:3')}<div>${cat(s)}<h3><span class="t">${esc(s.t)}</span></h3>${meta(s)}</div></a></li>`).join('');
+
+/* Feature */
+const lead=q3[0],mid=q3.slice(1,4),brief=q3.slice(4,8);
+$('feat').innerHTML=`
+<article class="lead"><a href="#s${lead.id}">${ph('r1610','Lead image · 16:10')}<div style="margin-top:8px">${cat(lead)}<h3 class="t">${esc(lead.t)}</h3><p class="sum">${esc(lead.s)}</p><div class="meta" style="margin-top:6px"><span class="q">${label(lead.ed)}</span> · ${lead.d} · ${lead.a}</div></div></a></article>
+<div class="col">${mid.map(s=>`<article><a href="#s${s.id}" style="display:block">${ph('r32','3:2')}<div style="margin-top:6px">${cat(s)}<h3><span class="t">${esc(s.t)}</span></h3>${meta(s)}</div></a></article>`).join('')}</div>
+<div class="col">${brief.map(s=>`<article class="brief"><a href="#s${s.id}" style="display:block">${cat(s)}<h3><span class="t">${esc(s.t)}</span></h3><p class="sum">${esc(s.s)}</p>${meta(s)}</a></article>`).join('')}</div>`;
+
+/* Recent */
+const recent=[...VIS].filter(s=>s.ed).sort((a,b)=>b.ed.localeCompare(a.ed)||b.id-a.id).slice(0,8);
+$('recent').innerHTML=recent.map(s=>`<li class="row"><a href="#s${s.id}" style="display:contents">${ph('r32','3:2')}<div>${cat(s)}<h3><span class="t">${esc(s.t)}</span></h3><p class="sum">${esc(s.s)}</p>${meta(s)}</div></a></li>`).join('');
+
+/* People */
+const sp=VIS.find(s=>s.ty==='STAFF_SPOTLIGHT'&&s.ed==='2026-Q3'),ht=VIS.find(s=>s.ty==='HEALTH_TIP'&&s.ed==='2026-Q3');
+const sn=VIS.filter(s=>['COMPANY_NEWS','EVENT'].includes(s.ty)).slice(0,3);
+$('people').innerHTML=`
+<article class="spot"><a href="#s${sp.id}">${ph('r34','Portrait · 3:4')}${cat(sp)}<h3 class="t">${esc(sp.t)}</h3><p class="sum">${esc(sp.s)}</p><p class="quote">${esc(sp.q)}</p></a></article>
+<div><div class="sec-h" style="margin-bottom:0"><span class="meta" style="text-transform:uppercase;letter-spacing:.07em;font-weight:600">Staff News</span></div>${sn.map(s=>`<div class="row" style="grid-template-columns:96px 1fr"><a href="#s${s.id}" style="display:contents">${ph('r43','4:3')}<div>${cat(s)}<h3><span class="t">${esc(s.t)}</span></h3>${meta(s)}</div></a></div>`).join('')}</div>
+<div class="tip"><span class="cat">Healthline</span><h3>${esc(ht.t)}</h3><p>${esc(ht.s)}</p><p class="meta" style="color:var(--ink);margin-top:8px">${label(ht.ed)} · ${ht.d}</p></div>`;
+
+/* Company table */
+const co=VIS.filter(s=>['COMPANY_NEWS','ARTICLE','EDITOR_NOTE'].includes(s.ty)).sort((a,b)=>(b.ed||'').localeCompare(a.ed||'')).slice(0,7);
+$('co').innerHTML=`<div class="tr th th-row"><span>Type</span><span>Headline</span><span>Edition</span><span>Date</span></div>`+co.map(s=>`<a class="tr" href="#s${s.id}"><span class="th-cat">${cat(s)}</span><h3><span class="t">${esc(s.t)}</span></h3><span class="meta th-q"><span class="q">${label(s.ed)}</span></span><span class="meta">${s.d}</span></a>`).join('');
+
+/* Mosaic */
+const M=[['a','Photo 1 · landscape','Sample caption for the lead photo'],['b','Photo 2 · landscape',''],['c','P3',''],['c','P4',''],['c','P5',''],['d','Photo 6 · wide',''],['d','Photo 7 · wide',''],['c','P8',''],['c','P9','']];
+$('mosaic').innerHTML=M.map((m,i)=>`<a class="${m[0]}" href="#photo${i+1}" aria-label="Open photo ${i+1} (placeholder)">${`<span class="ph reveal" data-label="${m[1]}"></span>`}${m[2]?`<span class="cap">${m[2]}</span>`:''}</a>`).join('');
+
+/* Shorts */
+const sh=[['Birthdays','Sample: five colleagues celebrate this week','29 Oct','m-pink'],['Notice','Sample: Annual leave forms due Friday','27 Oct','m-coral'],['Welcome','Sample: Two new joiners in Media','24 Oct','m-lime'],['Reminder','Sample: Fire drill next Tuesday','20 Oct','m-lav']];
+$('shorts').innerHTML=sh.map(x=>`<li class="${x[3]}"><span class="cat">${x[0]}</span><h3>${x[1]}</h3><div class="meta">${x[2]}</div></li>`).join('');
+
+/* Archive */
+const filt={year:null,q:null};
+const years=[...new Set(EDITIONS.filter(e=>e.status==='published').map(e=>e.code.slice(0,4)))].sort().reverse();
+function renderFilters(){
+  const f=$('filters');
+  const total=VIS.length;
+  const cnt=(fn)=>VIS.filter(fn).length;
+  let h=`<button class="chip" aria-pressed="${!filt.year&&!filt.q}" data-k="all">All<small>${total}</small></button>`;
+  years.forEach(y=>h+=`<button class="chip year" aria-pressed="${filt.year===y&&!filt.q}" data-k="y" data-v="${y}">${y}<small>${cnt(s=>s.ed&&s.ed.startsWith(y))}</small></button>`);
+  EDITIONS.filter(e=>e.status==='published').forEach(e=>h+=`<button class="chip" aria-pressed="${filt.q===e.code}" data-k="q" data-v="${e.code}">${label(e.code)}<small>${cnt(s=>s.ed===e.code)}</small></button>`);
+  h+=`<button class="chip" aria-pressed="${filt.q==='EVERGREEN'}" data-k="q" data-v="EVERGREEN">Evergreen<small>${cnt(s=>s.ev)}</small></button>`;
+  f.innerHTML=h;
+}
+function renderArchive(){
+  renderFilters();
+  const eds=EDITIONS.filter(e=>e.status==='published'&&(!filt.year||e.code.startsWith(filt.year))&&(!filt.q||filt.q===e.code));
+  $('edList').innerHTML=eds.map(e=>`<li ${filt.q===e.code?'aria-current="true"':''}><span class="code">${label(e.code)}</span><div><h3>${e.title}</h3><div class="meta">${VIS.filter(s=>s.ed===e.code).length} items</div></div></li>`).join('')||'<li class="meta">No editions for this filter.</li>';
+  const res=VIS.filter(s=>filt.q==='EVERGREEN'?s.ev:filt.q?s.ed===filt.q:filt.year?(s.ed||'').startsWith(filt.year):true).sort((a,b)=>(b.ed||'0').localeCompare(a.ed||'0')||b.id-a.id);
+  const name=filt.q==='EVERGREEN'?'Evergreen':filt.q?label(filt.q):filt.year||'all editions';
+  $('resCount').textContent=`${res.length} ${res.length===1?'item':'items'} · ${name}`;
+  $('results').innerHTML=res.map(s=>`<li class="row"><a href="#s${s.id}" style="display:contents">${ph('r43','4:3')}<div>${cat(s)}<h3><span class="t">${esc(s.t)}</span></h3>${meta(s)}</div></a></li>`).join('');
+  observe();
+}
+$('filters').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;
+  const k=b.dataset.k,v=b.dataset.v;
+  if(k==='all'){filt.year=null;filt.q=null}else if(k==='y'){filt.year=filt.year===v&&!filt.q?null:v;filt.q=null}else{filt.q=filt.q===v?null:v;if(filt.q)filt.year=null}
+  renderArchive();$('filters').querySelector('[aria-pressed=true]')?.focus();
+});
+document.querySelectorAll('[data-edition]').forEach(a=>a.addEventListener('click',()=>{filt.q=a.dataset.edition;filt.year=null;renderArchive()}));
+
+/* Featured video component: with a videoId it swaps in the nocookie embed; without one it stays an inert slot. */
+const vf=$('featuredVideo');
+function initVideo(){
+  const id=vf.dataset.videoId;
+  if(!/^[A-Za-z0-9_-]{11}$/.test(id)){return}
+  $('vfPlay').disabled=false;$('vfState').textContent='';vf.querySelector('.vbar').remove();
+  $('vfPlay').addEventListener('click',()=>{
+    vf.querySelector('.stage').innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="${esc(vf.querySelector('h3').textContent)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+  });
+}
+initVideo();
+
+/* Subtle image reveal */
+let io;function observe(){
+  const els=document.querySelectorAll('.reveal:not(.in)');
+  if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in'));return}
+  io=io||new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{rootMargin:'0px 0px -5% 0px'});
+  els.forEach(e=>io.observe(e));
+}
+renderArchive();
+</script>
+</body>
+</html>
