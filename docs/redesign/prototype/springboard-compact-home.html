@@ -11,14 +11,14 @@
    Five PHD colours, exact. Neutrals are derived and need client approval. */
 :root{
   --purple:#3A008C; --lime:#9FEA47; --coral:#FF7373; --lavender:#9B83FF; --pink:#FF70F2;
-  --ink:#1A0B3B; --paper:#FFFFFF; --wash:#F4F1F9; --rule:#D5CEE3; --muted:#5B4F72; --ph:#E3DEEC;
+  --ink:#1A0B3B; --paper:#FFFFFF; --page:#F0ECF6; --band:#E6E0F2; --wash:#EEE9F9; --tint:#E7E1F8; --edge:#CBC0EC; --rule:#CFC6E0; --muted:#52466B; --ph:#DAD3E8; --deep:#24005A;
   --head:'Syne',system-ui,sans-serif; --body:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
   --d-micro:140ms; --d-ui:200ms; --d-reveal:420ms; --ease:cubic-bezier(.2,.7,.2,1);
   --gutter:20px; --max:1240px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font:14px/1.45 var(--body);color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+body{font:14px/1.45 var(--body);color:var(--ink);background:var(--page);-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 a:hover .t,a.t:hover{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 :focus-visible{outline:2px solid var(--purple);outline-offset:2px}
@@ -31,7 +31,7 @@ ul{list-style:none}
 .skip:focus{top:8px}
 
 /* ============ Header ============ */
-.util{background:var(--ink);color:#E9E3F7;font-size:12px}
+.util{background:var(--deep);color:#E9E3F7;font-size:12px}
 .util .wrap{display:flex;justify-content:space-between;align-items:center;height:28px;gap:12px}
 .util b{color:var(--lime);font-weight:600}
 .util a:hover{text-decoration:underline}
@@ -57,9 +57,12 @@ nav.primary>ul>li{position:relative;display:flex}
 .menu-toggle{display:none}
 
 /* ============ Section scaffolding ============ */
-.sec{padding:22px 0;border-top:1px solid var(--rule)}
+.sec{padding:22px 0;border-top:2px solid var(--deep)}
+.sec.band{background:var(--band)}
+.surface{background:var(--paper);border:1px solid var(--rule)}
 .sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
 .sec-h h2{font:700 15px/1 var(--head);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:8px}
+.sec-h h2{color:var(--deep)}
 .sec-h h2::before{content:"";width:8px;height:8px;background:var(--mark,var(--purple))}
 .sec-h a{font-size:12.5px;font-weight:600;color:var(--purple)}
 .sec-h a:hover{text-decoration:underline}
@@ -79,11 +82,21 @@ h3.t,h3{font:700 16px/1.25 var(--head);letter-spacing:-.005em}
 .reveal.in{opacity:1}
 
 /* ============ Featured video component ============ */
-.video-feature .stage{position:relative;background:var(--ink);aspect-ratio:16/9;color:#fff;overflow:hidden}
-.video-feature .poster{position:absolute;inset:0;background:#2A1A55;display:flex;align-items:center;justify-content:center}
+.video-feature .stage{position:relative;background:var(--deep);aspect-ratio:16/9;color:#fff;overflow:hidden}
+.video-feature{background:var(--paper);border:1px solid var(--rule)}
+.video-feature .stage{max-height:400px}
+.video-feature .poster{position:absolute;inset:0;background:var(--deep);display:flex;align-items:center;justify-content:center}
+.video-feature .poster>.lbl,.video-feature .slot{z-index:1}
+.video-feature .vbar{z-index:2}
+.video-feature .poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.video-feature .slot{position:absolute;inset:40px 14px 82px;align-items:center;justify-content:center;text-align:center;border:1px dashed #8B73D1;display:flex;padding:10px;color:#D9CCF5;font-size:12px}
+.video-feature[data-ready=true] .slot{display:none}
+.video-feature .ovl{position:absolute;left:0;right:0;bottom:36px;background:rgba(36,0,90,.94);padding:8px 12px;display:flex;gap:10px;align-items:baseline;font-size:13px;pointer-events:none}
+.video-feature .ovl b{font:700 14px/1.2 var(--head)}
+.video-feature .ovl span{color:#CFC6E6;font-size:12px;margin-left:auto;white-space:nowrap}
 .video-feature .poster span.lbl{position:absolute;left:10px;top:10px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:var(--lime);color:var(--ink);padding:3px 6px;font-weight:700}
-.video-feature .poster small{position:absolute;left:10px;bottom:46px;font-size:11px;color:#CFC6E6}
-.play{width:64px;height:64px;background:var(--lime);color:var(--ink);display:flex;align-items:center;justify-content:center;transition:transform var(--d-ui) var(--ease)}
+
+.play{position:relative;z-index:2;width:56px;height:56px;background:var(--lime);color:var(--ink);display:flex;align-items:center;justify-content:center;transition:transform var(--d-ui) var(--ease)}
 .play svg{width:24px;height:24px;margin-left:3px}
 .video-feature .stage:hover .play{transform:scale(1.06)}
 .play[disabled]{background:#8F86A8;cursor:not-allowed}
@@ -95,29 +108,34 @@ h3.t,h3{font:700 16px/1.25 var(--head);letter-spacing:-.005em}
 .vbar .track{flex:1;height:3px;background:#5B4F72}
 .vbar .time{font-variant-numeric:tabular-nums;color:#CFC6E6}
 .video-feature iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.video-feature .cap{display:grid;grid-template-columns:1fr;gap:3px;padding-top:10px}
-.video-feature .cap h3{font-size:22px;line-height:1.15}
+.video-feature .cap{display:grid;grid-template-columns:1fr;gap:3px;padding:10px 14px 12px;border-top:1px solid var(--rule)}
+.video-feature .vmeta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px;font-size:12px;color:var(--muted)}
+.video-feature .vmeta a{font-weight:600;color:var(--purple)}
+.video-feature .vmeta a:hover{text-decoration:underline}
+.video-feature .cap h3{font-size:19px;line-height:1.2}
 .video-feature .cap p{color:var(--muted);font-size:13.5px}
 .video-feature[data-orientation=portrait] .stage{aspect-ratio:9/16;max-height:520px;margin:0 auto}
 
 /* ============ Hero ============ */
 .hero{padding:16px 0 20px}
-.hero-grid{display:grid;grid-template-columns:minmax(0,8fr) minmax(0,4fr);gap:24px}
-.edition-box{border-top:3px solid var(--purple);background:var(--wash);padding:12px 14px}
+.hero-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:24px;align-items:start}
+.panel{background:var(--tint);border:1px solid var(--edge);border-top:3px solid var(--purple)}
+.edition-box{padding:12px 14px;border-bottom:1px solid var(--edge)}
 .edition-box .kicker{display:flex;justify-content:space-between;align-items:center;font:700 11px/1 var(--body);letter-spacing:.07em;text-transform:uppercase}
 .edition-box .kicker b{background:var(--lime);padding:3px 6px;color:var(--ink)}
 .edition-box h2{font:800 21px/1.1 var(--head);margin:8px 0 3px}
 .edition-box .counts{font-size:12px;color:var(--muted)}
-.edition-box .go{display:inline-block;margin-top:8px;font-weight:600;font-size:13px;color:var(--purple)}
-.edition-box .go:hover{text-decoration:underline}
-.stack{margin-top:10px}
+.edition-box .go{display:inline-block;margin-top:10px;font-weight:700;font-size:13px;background:var(--lime);color:var(--ink);padding:7px 12px;transition:background var(--d-micro)}
+.edition-box .go:hover{background:#B4F26A}
+.stack{padding:0 14px}
 .row{display:grid;grid-template-columns:84px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--rule);align-items:start}
 .row:last-child{border:0}
+.panel .row{border-color:var(--edge)}
 .row h3{font-size:14.5px;line-height:1.25;margin-top:3px}
 .row .meta{margin-top:3px}
 
 /* ticker */
-.bites{background:var(--ink);color:#fff}
+.bites{background:var(--deep);color:#fff;border-bottom:1px solid #4A1FA0}
 .bites .wrap{display:flex;align-items:center;gap:14px;height:38px;overflow:hidden}
 .bites b{background:var(--lime);color:var(--ink);font:700 11px/1 var(--body);text-transform:uppercase;letter-spacing:.07em;padding:5px 7px;flex:none}
 .bites ul{display:flex;gap:26px;overflow:hidden;white-space:nowrap;font-size:13px;flex:1}
@@ -127,11 +145,12 @@ h3.t,h3{font:700 16px/1.25 var(--head);letter-spacing:-.005em}
 /* ============ Section layouts (deliberately different) ============ */
 .feat{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,3fr) minmax(0,3fr);gap:24px}
 .feat .lead h3{font-size:26px;line-height:1.12;margin:8px 0 4px}
+.feat .col{background:var(--paper);border:1px solid var(--rule);padding:12px;align-self:start}
 .feat .col>*+*{margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
 .feat .col h3{font-size:15px}
 .feat .brief h3{font-size:14.5px}
 
-.recent{display:grid;grid-template-columns:1fr 1fr;column-gap:32px}
+.recent{display:grid;grid-template-columns:1fr 1fr;column-gap:32px;background:var(--paper);border:1px solid var(--rule);padding:0 16px}
 .recent .row{grid-template-columns:132px 1fr;padding:12px 0}
 .recent .row h3{font-size:16px}
 .recent .row:nth-last-child(-n+2){border-bottom:0}
@@ -139,15 +158,18 @@ h3.t,h3{font:700 16px/1.25 var(--head);letter-spacing:-.005em}
 .people{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,4.4fr) minmax(0,3fr);gap:24px;align-items:start}
 .spot h3{font-size:19px;margin:8px 0 3px}
 .spot .quote{border-left:3px solid var(--pink);padding-left:10px;margin-top:8px;font-style:italic;font-size:13.5px}
-.tip{background:var(--lavender);color:var(--ink);padding:14px}
+.tip{background:var(--lavender);color:var(--ink);padding:14px;border-top:3px solid var(--deep)}
 .tip .cat{color:var(--ink)}.tip .cat::before{background:var(--ink)}
 .tip h3{margin:6px 0 4px;font-size:17px}
 .tip p{font-size:13.5px}
 
 .table .tr{display:grid;grid-template-columns:150px 1fr 90px 90px;gap:16px;padding:9px 0;border-bottom:1px solid var(--rule);align-items:baseline}
-.table .tr:first-child{border-top:1px solid var(--ink)}
+.table{background:var(--paper);border:1px solid var(--rule);padding:0 14px}
+.table .tr:first-child{border-top:0}
+.table .tr:last-child{border-bottom:0}
 .table .tr h3{font-size:15px}
 .table .tr:hover{background:var(--wash)}
+.table .th-row{background:none}
 .table .th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
 
 .mosaic{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:92px;gap:6px}
@@ -162,36 +184,37 @@ h3.t,h3{font:700 16px/1.25 var(--head);letter-spacing:-.005em}
 .mosaic .cap{position:absolute;left:0;right:0;bottom:0;background:rgba(26,11,59,.88);color:#fff;font-size:12px;padding:5px 8px}
 .mosaic .ph::after{bottom:auto;top:5px}
 
-.shorts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--ink)}
-.shorts li{padding:10px 14px 10px 0;margin-right:14px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
-.shorts li:nth-child(4n){border-right:0;margin-right:0}
+.shorts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--paper);border:1px solid var(--rule)}
+.shorts li{padding:10px 14px;border-right:1px solid var(--rule)}
+.shorts li:nth-child(4n){border-right:0}
 .shorts h3{font:600 13.5px/1.3 var(--body);margin-top:4px}
 
 /* ============ Archive ============ */
 .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.chip{padding:5px 10px;border:1px solid var(--ink);font-size:12.5px;font-weight:600;transition:background var(--d-micro),color var(--d-micro)}
+.chip{padding:5px 10px;border:1px solid var(--deep);background:var(--paper);font-size:12.5px;font-weight:600;transition:background var(--d-micro),color var(--d-micro)}
 .chip:hover{background:var(--wash)}
 .chip[aria-pressed=true]{background:var(--purple);border-color:var(--purple);color:#fff}
-.chip.year{border-color:var(--rule);background:var(--wash)}
+.chip.year{border-color:var(--edge);background:var(--tint)}
 .chip.year[aria-pressed=true]{background:var(--ink);border-color:var(--ink)}
 .chip small{font-weight:400;opacity:.8;margin-left:3px}
 .arch-grid{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:28px}
 .ed-list li{display:grid;grid-template-columns:56px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule);align-items:center}
-.ed-list li[aria-current=true]{background:var(--wash);box-shadow:inset 3px 0 var(--purple);padding-left:8px}
+.ed-list li[aria-current=true]{background:var(--tint);box-shadow:inset 3px 0 var(--purple);padding-left:8px}
 .ed-list .code{font:800 15px/1 var(--head);color:var(--purple)}
 .ed-list h3{font-size:14px}
 .res-count{font-size:12px;color:var(--muted);margin-bottom:4px}
 .res .row{grid-template-columns:96px 1fr}
+.res ul,.ed-list{background:var(--paper);border:1px solid var(--rule);padding:0 14px}
 
 /* ============ Footer ============ */
-footer{background:var(--purple);color:#fff;margin-top:24px;font-size:13px}
+footer{background:var(--deep);color:#fff;margin-top:24px;font-size:13px}
 footer .wrap{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:24px;padding-top:24px;padding-bottom:24px}
 footer h4{font:700 11px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--lime);margin-bottom:10px}
 footer li{margin-bottom:6px}
 footer a:hover{text-decoration:underline}
 .fine{border-top:1px solid rgba(255,255,255,.25);padding:10px 0;font-size:12px;color:#D9CCF5}
 
-.proto-note{background:var(--lime);color:var(--ink);font-size:12px;padding:6px 0}
+.proto-note{background:#DDF6BE;color:var(--ink);font-size:12px;padding:6px 0}
 .proto-note .wrap{display:flex;gap:8px}
 
 /* ============ Responsive ============ */
@@ -203,6 +226,7 @@ footer a:hover{text-decoration:underline}
   footer .wrap{grid-template-columns:1fr 1fr}
 }
 @media (max-width:760px){
+  .video-feature .slot{font-size:0}
   :root{--gutter:14px}
   .menu-toggle{display:flex}
   nav.primary{position:fixed;inset:80px 0 0 0;top:var(--navtop,80px);background:var(--purple);overflow:auto;transform:translateX(100%);visibility:hidden;transition:transform var(--d-ui) var(--ease),visibility 0s var(--d-ui);padding:8px 0}
@@ -271,12 +295,14 @@ footer a:hover{text-decoration:underline}
   <article class="video-feature" id="featuredVideo" data-provider="youtube" data-video-id="" data-orientation="landscape" aria-labelledby="vf-title">
     <div class="stage">
       <div class="poster" id="vfPoster">
-        <span class="lbl">Featured video</span>
+        <img id="vfThumb" alt="" hidden>
+        <div class="slot" id="vfSlot">Placeholder: the video thumbnail appears here once a video is supplied (16:9)</div>
+        <span class="lbl" id="vfLbl">Featured video · placeholder</span>
         <button class="play" id="vfPlay" aria-label="Play video" disabled>
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>
         </button>
-        <small id="vfState">No video supplied yet · 16:9 thumbnail slot</small>
-      </div>
+        </div>
+      <div class="ovl" id="vfOvl"><b id="vfOvlT">Video title will show here</b><span id="vfDur">Duration pending</span></div>
       <div class="vbar" aria-label="Playback controls (inactive until a video is supplied)">
         <button disabled aria-label="Play"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></button>
         <span class="time">0:00</span>
@@ -289,18 +315,19 @@ footer a:hover{text-decoration:underline}
     <div class="cap">
       <span class="cat m-lime">Featured video · 2026 Q3</span>
       <h3 id="vf-title">Sample video title appears here</h3>
-      <p>Caption of one or two lines, written by the editor. Placeholder text only.</p>
+      <p id="vfCap">Caption of one or two lines, written by the editor. Placeholder text only.</p>
+      <div class="vmeta"><span id="vfMeta">No video supplied yet</span><a href="#">More videos →</a></div>
     </div>
   </article>
 
   <section aria-label="Latest edition">
-    <div class="edition-box">
+    <div class="panel"><div class="edition-box">
       <div class="kicker"><span>Latest edition</span><b>2026 Q3</b></div>
       <h2>July – September 2026</h2>
       <p class="counts" id="edCounts"></p>
       <a class="go" href="#archive" data-edition="2026-Q3">Open this edition →</a>
     </div>
-    <ul class="stack" id="heroList"></ul>
+    <ul class="stack" id="heroList"></ul></div>
   </section>
  </div>
 </section>
@@ -314,7 +341,7 @@ footer a:hover{text-decoration:underline}
 </section>
 
 <!-- ============ Recent stories ============ -->
-<section class="sec" aria-labelledby="h-recent" style="--mark:var(--coral)">
+<section class="sec band" aria-labelledby="h-recent" style="--mark:var(--coral)">
  <div class="wrap">
   <div class="sec-h"><h2 id="h-recent">Recent stories</h2><a href="#archive">Browse archive</a></div>
   <ul class="recent" id="recent"></ul>
@@ -330,7 +357,7 @@ footer a:hover{text-decoration:underline}
 </section>
 
 <!-- ============ Company & Business ============ -->
-<section class="sec" aria-labelledby="h-co" style="--mark:var(--lavender)">
+<section class="sec band" aria-labelledby="h-co" style="--mark:var(--lavender)">
  <div class="wrap">
   <div class="sec-h"><h2 id="h-co">Company &amp; Business</h2><a href="#">Company News · Articles</a></div>
   <div class="table" id="co"></div>
@@ -346,7 +373,7 @@ footer a:hover{text-decoration:underline}
 </section>
 
 <!-- ============ Short-form ============ -->
-<section class="sec" aria-labelledby="h-short" style="--mark:var(--coral)">
+<section class="sec band" aria-labelledby="h-short" style="--mark:var(--coral)">
  <div class="wrap">
   <div class="sec-h"><h2 id="h-short">Short updates</h2><a href="#">All updates</a></div>
   <ul class="shorts" id="shorts"></ul>
@@ -354,7 +381,7 @@ footer a:hover{text-decoration:underline}
 </section>
 
 <!-- ============ Quarterly archive ============ -->
-<section class="sec" id="archive" aria-labelledby="h-arch" style="--mark:var(--purple)">
+<section class="sec band" id="archive" aria-labelledby="h-arch" style="--mark:var(--purple)">
  <div class="wrap">
   <div class="sec-h"><h2 id="h-arch">Quarterly archive</h2><span class="meta">Generated from published editions</span></div>
   <div class="filters" id="filters" role="group" aria-label="Filter by quarter"></div>
@@ -527,17 +554,28 @@ $('filters').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!
 });
 document.querySelectorAll('[data-edition]').forEach(a=>a.addEventListener('click',()=>{filt.q=a.dataset.edition;filt.year=null;renderArchive()}));
 
-/* Featured video component: with a videoId it swaps in the nocookie embed; without one it stays an inert slot. */
+/* Featured video component.
+   setVideo({videoId,title,caption,thumbnail,duration,edition}) is the only entry point. In the real build the
+   record comes from the editor's selection; thumbnail is a media URL or the provider thumbnail.
+   Without a valid 11-character id the component stays an inert, labelled placeholder. */
 const vf=$('featuredVideo');
-function initVideo(){
-  const id=vf.dataset.videoId;
-  if(!/^[A-Za-z0-9_-]{11}$/.test(id)){return}
-  $('vfPlay').disabled=false;$('vfState').textContent='';vf.querySelector('.vbar').remove();
-  $('vfPlay').addEventListener('click',()=>{
-    vf.querySelector('.stage').innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="${esc(vf.querySelector('h3').textContent)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
-  });
+function setVideo(v){
+  if(!v||!/^[A-Za-z0-9_-]{11}$/.test(v.videoId||''))return false;
+  vf.dataset.videoId=v.videoId;vf.dataset.ready='true';
+  $('vf-title').textContent=v.title;$('vfOvlT').textContent=v.title;
+  $('vfCap').textContent=v.caption||'';$('vfDur').textContent=v.duration||'';
+  $('vfMeta').textContent='Video · '+(v.edition?label(v.edition):'Evergreen');
+  $('vfLbl').textContent='Featured video';
+  const img=$('vfThumb');img.src=v.thumbnail||`https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;img.alt='';img.hidden=false;
+  const pl=$('vfPlay');pl.disabled=false;pl.setAttribute('aria-label','Play video: '+v.title);
+  vf.querySelector('.vbar')?.remove();
+  pl.addEventListener('click',()=>{
+    vf.querySelector('.stage').innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${v.videoId}?autoplay=1&rel=0" title="${esc(v.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+  },{once:true});
+  return true;
 }
-initVideo();
+window.setVideo=setVideo;
+/* No video has been supplied. setVideo(...) is intentionally not called. */
 
 /* Subtle image reveal */
 let io;function observe(){
