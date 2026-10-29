@@ -114,7 +114,16 @@ h3.t,h3{font:700 16px/1.25 var(--head);letter-spacing:-.005em}
 .video-feature .vmeta a:hover{text-decoration:underline}
 .video-feature .cap h3{font-size:19px;line-height:1.2}
 .video-feature .cap p{color:var(--muted);font-size:13.5px}
-.video-feature[data-orientation=portrait] .stage{aspect-ratio:9/16;max-height:520px;margin:0 auto}
+.video-feature[data-orientation=portrait] .stage{aspect-ratio:9/16;max-height:min(520px,72svh);width:auto;max-width:100%;margin:0 auto}
+.video-feature[data-orientation=portrait] .stagebg{background:var(--deep)}
+.video-feature .play:focus-visible,.vlist button:focus-visible{outline:3px solid var(--lime);outline-offset:-3px}
+.video-feature .ptitle{position:absolute;left:0;right:0;bottom:0;z-index:1;background:linear-gradient(to top,rgba(36,0,90,.95),rgba(36,0,90,0));padding:28px 12px 10px;font:700 14px/1.2 var(--head);pointer-events:none}
+.video-feature .poster.noimg{background:linear-gradient(160deg,var(--deep),#3A1A7A)}
+.vlist{list-style:none;margin:8px 0 0;padding:8px 0 0;border-top:1px solid var(--rule);display:flex;gap:8px;flex-wrap:wrap}
+.vlist button{display:flex;gap:8px;align-items:center;text-align:left;border:1px solid var(--edge);background:var(--wash);padding:4px 10px 4px 4px;min-height:44px;font-size:12.5px}
+.vlist button[aria-pressed=true]{border-color:var(--deep);background:var(--tint);box-shadow:inset 3px 0 0 var(--lime)}
+.vlist img{width:40px;height:30px;object-fit:cover;background:var(--ph)}
+.vlist .o{display:block;font-size:11px;color:var(--muted)}
 
 /* ============ Hero ============ */
 .hero{padding:16px 0 20px}
@@ -261,7 +270,7 @@ footer a:hover{text-decoration:underline}
 <body>
 <a class="skip" href="#main">Skip to main content</a>
 
-<div class="proto-note" role="region" aria-label="Prototype notice"><div class="wrap"><b>Review prototype</b><span>Compact homepage. All stories, names and counts are fictional. Grey boxes are labelled image placeholders, not photography. No video has been supplied.</span></div></div>
+<div class="proto-note" role="region" aria-label="Prototype notice"><div class="wrap"><b>Review prototype</b><span>Compact homepage. All stories, names and counts are fictional. Grey boxes are labelled image placeholders, not photography. Videos are the three supplied YouTube ids; their titles, captions and quarter are placeholders; thumbnails load from YouTube.</span></div></div>
 
 <div class="util on-purple" role="region" aria-label="Edition and date"><div class="wrap">
   <span><b>Latest edition</b> · <a href="#archive" data-edition="2026-Q3">2026 Q3 (Jul–Sep)</a></span>
@@ -293,30 +302,13 @@ footer a:hover{text-decoration:underline}
  <div class="wrap hero-grid">
   <!-- Video-content component. Data comes from an editorially selected video record. -->
   <article class="video-feature" id="featuredVideo" data-provider="youtube" data-video-id="" data-orientation="landscape" aria-labelledby="vf-title">
-    <div class="stage">
-      <div class="poster" id="vfPoster">
-        <img id="vfThumb" alt="" hidden>
-        <div class="slot" id="vfSlot">Placeholder: the video thumbnail appears here once a video is supplied (16:9)</div>
-        <span class="lbl" id="vfLbl">Featured video · placeholder</span>
-        <button class="play" id="vfPlay" aria-label="Play video" disabled>
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>
-        </button>
-        </div>
-      <div class="ovl" id="vfOvl"><b id="vfOvlT">Video title will show here</b><span id="vfDur">Duration pending</span></div>
-      <div class="vbar" aria-label="Playback controls (inactive until a video is supplied)">
-        <button disabled aria-label="Play"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></button>
-        <span class="time">0:00</span>
-        <span class="track" aria-hidden="true"></span>
-        <span class="time">0:00</span>
-        <button disabled aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z"/></svg></button>
-        <button disabled aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg></button>
-      </div>
-    </div>
+    <div class="stagebg"><div class="stage" id="vfStage"></div></div>
     <div class="cap">
-      <span class="cat m-lime">Featured video · 2026 Q3</span>
-      <h3 id="vf-title">Sample video title appears here</h3>
-      <p id="vfCap">Caption of one or two lines, written by the editor. Placeholder text only.</p>
-      <div class="vmeta"><span id="vfMeta">No video supplied yet</span><a href="#">More videos →</a></div>
+      <span class="cat m-lime" id="vfKicker">Featured video</span>
+      <h3 id="vf-title">Video</h3>
+      <p id="vfCap" hidden></p>
+      <div class="vmeta"><span id="vfMeta"></span><a id="vfWatch" href="#" target="_blank" rel="noopener noreferrer">Watch on YouTube<span class="sr"> (opens in a new tab)</span></a></div>
+      <ul class="vlist" id="vfList" aria-label="Choose a featured video"></ul>
     </div>
   </article>
 
@@ -490,7 +482,7 @@ $('ticker').innerHTML=BITES.map(b=>`<li><span>${b[0]}</span><a href="#">${esc(b[
 
 /* Hero list + counts */
 const q3=VIS.filter(s=>s.ed==='2026-Q3');
-$('edCounts').textContent=`${q3.length} items · 1 gallery · 0 videos supplied`;
+
 $('heroList').innerHTML=q3.slice(0,4).map(s=>`<li class="row"><a href="#s${s.id}" style="display:contents">${ph('r43','4:3')}<div>${cat(s)}<h3><span class="t">${esc(s.t)}</span></h3>${meta(s)}</div></a></li>`).join('');
 
 /* Feature */
@@ -555,27 +547,51 @@ $('filters').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!
 document.querySelectorAll('[data-edition]').forEach(a=>a.addEventListener('click',()=>{filt.q=a.dataset.edition;filt.year=null;renderArchive()}));
 
 /* Featured video component.
-   setVideo({videoId,title,caption,thumbnail,duration,edition}) is the only entry point. In the real build the
-   record comes from the editor's selection; thumbnail is a media URL or the provider thumbnail.
-   Without a valid 11-character id the component stays an inert, labelled placeholder. */
-const vf=$('featuredVideo');
-function setVideo(v){
-  if(!v||!/^[A-Za-z0-9_-]{11}$/.test(v.videoId||''))return false;
-  vf.dataset.videoId=v.videoId;vf.dataset.ready='true';
-  $('vf-title').textContent=v.title;$('vfOvlT').textContent=v.title;
-  $('vfCap').textContent=v.caption||'';$('vfDur').textContent=v.duration||'';
-  $('vfMeta').textContent='Video · '+(v.edition?label(v.edition):'Evergreen');
-  $('vfLbl').textContent='Featured video';
-  const img=$('vfThumb');img.src=v.thumbnail||`https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;img.alt='';img.hidden=false;
-  const pl=$('vfPlay');pl.disabled=false;pl.setAttribute('aria-label','Play video: '+v.title);
-  vf.querySelector('.vbar')?.remove();
-  pl.addEventListener('click',()=>{
-    vf.querySelector('.stage').innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${v.videoId}?autoplay=1&rel=0" title="${esc(v.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+   Data model mirrors the existing validated video block (videoId, title, caption, orientation) plus the
+   edition of the story that contains it. videoId is re-validated here exactly as lib/video/youtube.ts does;
+   no URL or HTML from data is ever used. Titles/captions/editions below are PLACEHOLDERS: only the names
+   (HR, Dare, CJ), ids and orientations were supplied. In the real build the list comes from published
+   Video blocks and the featured pick from the admin setting (see proposed-migrations/M4_featured_video.sql). */
+const ID_RE=/^[A-Za-z0-9_-]{11}$/;
+const VIDEOS=[
+ {videoId:'hIW7FrWtcHE',title:'HR',caption:'',orientation:'landscape',edition:'2026-Q3'},
+ {videoId:'jkEu3O_fX94',title:'Dare',caption:'',orientation:'portrait',edition:'2026-Q3'},
+ {videoId:'V4g-MVnRom8',title:'CJ',caption:'',orientation:'portrait',edition:'2026-Q3'}
+].filter(v=>ID_RE.test(v.videoId));
+$('edCounts').textContent=`${q3.length} items · 1 gallery · ${VIDEOS.length} videos`;
+const vf=$('featuredVideo'),vfStage=$('vfStage');
+const thumbUrl=v=>v.thumbnail||`https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;
+const PLAY='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>';
+let current=null;
+function setVideo(v,focusList){
+  if(!v||!ID_RE.test(v.videoId||''))return false;
+  current=v;
+  vf.dataset.videoId=v.videoId;vf.dataset.orientation=v.orientation==='portrait'?'portrait':'landscape';vf.dataset.ready='true';
+  vfStage.innerHTML=`<div class="poster noimg" id="vfPoster"><img id="vfThumb" alt="" referrerpolicy="no-referrer" src="${thumbUrl(v)}"><button class="play" id="vfPlay" type="button" aria-label="Play video: ${esc(v.title)}">${PLAY}</button><div class="ptitle" aria-hidden="true">${esc(v.title)}</div></div>`;
+  const img=vfStage.querySelector('#vfThumb');
+  const poster=img.parentElement;
+  img.addEventListener('load',()=>poster.classList.remove('noimg'));
+  img.addEventListener('error',()=>img.remove());
+  vfStage.querySelector('#vfPlay').addEventListener('click',()=>{
+    const f=document.createElement('iframe');
+    f.src=`https://www.youtube-nocookie.com/embed/${v.videoId}?autoplay=1&rel=0&playsinline=1&modestbranding=1`;
+    f.title=v.title;f.allow='autoplay; encrypted-media; picture-in-picture';f.allowFullscreen=true;f.referrerPolicy='strict-origin-when-cross-origin';
+    vfStage.replaceChildren(f);f.focus();
   },{once:true});
+  $('vf-title').textContent=v.title;
+  const c=$('vfCap');c.textContent=v.caption||'';c.hidden=!v.caption;
+  $('vfKicker').textContent='Featured video'+(v.edition?' · '+label(v.edition):'');
+  $('vfMeta').textContent=(v.orientation==='portrait'?'Vertical 9:16':'Landscape 16:9')+' · '+(v.edition?label(v.edition):'Evergreen');
+  $('vfWatch').href=(v.orientation==='portrait'?'https://www.youtube.com/shorts/':'https://www.youtube.com/watch?v=')+v.videoId;
+  vfList.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.id===v.videoId)));
+  if(focusList)vfList.querySelector(`[data-id="${v.videoId}"]`)?.focus();
   return true;
 }
-window.setVideo=setVideo;
-/* No video has been supplied. setVideo(...) is intentionally not called. */
+const vfList=$('vfList');
+vfList.innerHTML=VIDEOS.map(v=>`<li><button type="button" data-id="${v.videoId}" aria-pressed="false"><img alt="" referrerpolicy="no-referrer" src="${thumbUrl(v)}" onerror="this.remove()"><span><b>${esc(v.title)}</b><span class="o">${v.orientation==='portrait'?'Vertical':'Landscape'}</span></span></button></li>`).join('');
+vfList.addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(!b)return;const v=VIDEOS.find(x=>x.videoId===b.dataset.id);if(v&&(!current||v.videoId!==current.videoId))setVideo(v,true)});
+window.setVideo=setVideo;window.VIDEOS=VIDEOS;
+setVideo(VIDEOS[0]); /* HR is the initial featured video */
 
 /* Subtle image reveal */
 let io;function observe(){

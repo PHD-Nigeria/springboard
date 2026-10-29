@@ -111,3 +111,15 @@ Not implemented, with the reason:
 
 Verification (run, with the output seen): `tsc --noEmit` clean, `eslint` clean, `next build` succeeds (with a local font standing in for the blocked Google font). Rendered against a mock Supabase server with fictional data: axe found no violations on the new screens at 1440 and 390 for an editor and a contributor, and scripted keyboard and mouse checks passed (block inserter, move, undo, unsaved-change guard, Ctrl+S, refused save showing an error and no success text, media dialog, filters).
 Not verified: any real database, RLS behaviour, real uploads and storage, scheduled publishing, Safari and Firefox, screen readers. The mock does not implement RLS, so contributor scoping and permission refusals were only checked where the UI itself decides.
+
+## 10. Featured video (HR, Dare, CJ)
+
+Prototype: `prototype/springboard-compact-home.html` now features HR (`hIW7FrWtcHE`, 16:9) first, with Dare (`jkEu3O_fX94`) and CJ (`V4g-MVnRom8`) as 9:16 selectable features. Each keeps its native ratio, shows a named play button (44px+ target), the title, an optional caption and a "Watch on YouTube" link, and mounts the `youtube-nocookie.com` player only after a click. Ids are validated with the same pattern as `lib/video/youtube.ts`.
+
+Placeholders, not supplied: titles are the names given (HR, Dare, CJ), captions are empty, and quarter is assumed to be 2026 Q3 for all three. Confirm or correct.
+
+Data model (no new table): a video is a Video block inside a story; its quarter is that story's edition (`content.publication_id`). Making a new quarter active changes only `site_settings.default_publication_id`, so older editions keep their videos. The only thing that needs storing is which video is featured: `proposed-migrations/M4_featured_video.sql` (two nullable columns on `site_settings`, admin-only write inherited from the existing policy). NOT applied. Until approved there is no admin control for it and the real homepage cannot persist a choice; no mock control was added.
+
+Privacy decision needed: the existing `YouTubeEmbed` deliberately never loads YouTube's own thumbnail (it would contact Google before the visitor chooses to play), and uses an editor-chosen Media Library image instead. The request asks for YouTube thumbnails, so the prototype loads `i.ytimg.com/vi/<id>/hqdefault.jpg` with `referrerpolicy=no-referrer`. Alternatives: staff cache each thumbnail into the Media Library once (upload, so not done here), which keeps the current no-contact behaviour. Also, `hqdefault` is 4:3 and will look low-resolution cropped to 9:16.
+
+Checks: `checks/verify-featured-video.cjs`, 76 assertions at 1440/1024/768/390, all passing, fully offline (YouTube hosts intercepted). They prove ratios, no overflow, selector state, keyboard activation and player host. They do NOT show real thumbnails or real playback: this sandbox cannot reach YouTube, so real titles, thumbnails, embeddability and orientation were not checked.
