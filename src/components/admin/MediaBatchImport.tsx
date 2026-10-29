@@ -451,7 +451,7 @@ export function MediaBatchImport() {
                           <p className="text-foreground-muted">Valid · no duplicates found</p>
                         ) : (
                           notes.map((note) => (
-                            <p key={note} className="text-coral">
+                            <p key={note} className="text-danger">
                               ⚠ {note}
                             </p>
                           ))
@@ -491,7 +491,7 @@ export function MediaBatchImport() {
                             item.status === "failed" || !item.validation.ok
                               ? "text-danger"
                               : item.status === "done"
-                                ? "text-secondary-400"
+                                ? "text-primary-600"
                                 : "text-foreground"
                           }
                         >

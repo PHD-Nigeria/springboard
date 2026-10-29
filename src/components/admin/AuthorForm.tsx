@@ -65,7 +65,7 @@ export function AuthorForm({ author }: { author: AdminAuthorRow | null }) {
           pattern="[a-z0-9\-]+"
         />
         {slugChanged && author.articleCount > 0 && (
-          <p className="mt-1.5 font-body text-xs text-coral">
+          <p className="mt-1.5 font-body text-xs text-danger">
             This contributor has {author.articleCount} {author.articleCount === 1 ? "article" : "articles"} — changing
             the slug changes their public URL immediately, and there is no redirect from the old one.
           </p>

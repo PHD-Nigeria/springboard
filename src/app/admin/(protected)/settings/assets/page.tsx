@@ -20,7 +20,7 @@ export default async function AdminSiteAssetsPage() {
         title="Site Assets"
         description="Approved PHD/Springboard brand assets, managed through the Media Library."
         actions={
-          <Link href="/admin/settings" className="font-body text-sm text-foreground-muted hover:text-secondary-400">
+          <Link href="/admin/settings" className="font-body text-sm text-foreground-muted hover:text-primary-600">
             ← Back to Settings
           </Link>
         }

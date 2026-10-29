@@ -75,7 +75,7 @@ export function ContentPicker({ selectedIds, excludeId, onChange }: ContentPicke
             type="button"
             onClick={() => toggle(row)}
             className={`block w-full border-b border-border px-3 py-2 text-left font-body text-sm last:border-b-0 hover:bg-background ${
-              selectedIds.includes(row.id) ? "text-secondary-400" : "text-foreground"
+              selectedIds.includes(row.id) ? "text-primary-600" : "text-foreground"
             }`}
           >
             {selectedIds.includes(row.id) ? "✓ " : ""}

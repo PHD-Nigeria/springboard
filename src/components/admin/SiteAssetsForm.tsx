@@ -104,7 +104,7 @@ export function SiteAssetsForm({
         </div>
 
         {error && <p className="font-body text-sm text-danger">{error}</p>}
-        {saved && !error && <p className="font-body text-sm text-secondary-400">Saved.</p>}
+        {saved && !error && <p className="font-body text-sm text-primary-600">Saved.</p>}
         <AdminButton type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save"}
         </AdminButton>

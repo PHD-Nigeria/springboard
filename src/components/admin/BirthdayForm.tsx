@@ -68,7 +68,7 @@ export function BirthdayForm({ content, staffOptions, categoryId, initialStaffId
           ))}
         </AdminSelect>
         {staffOptions.length === 0 && (
-          <p className="mt-1.5 font-body text-xs text-coral">No staff in the directory yet, add one at /admin/staff first.</p>
+          <p className="mt-1.5 font-body text-xs text-danger">No staff in the directory yet, add one at /admin/staff first.</p>
         )}
       </div>
 

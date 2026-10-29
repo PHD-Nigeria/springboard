@@ -153,7 +153,7 @@ export function HomepageConfigForm({
 
         {!isAdmin && <p className="font-body text-xs text-foreground-muted">Only admins can change this.</p>}
         {error && <p className="font-body text-sm text-danger">{error}</p>}
-        {saved && !error && <p className="font-body text-sm text-secondary-400">Saved.</p>}
+        {saved && !error && <p className="font-body text-sm text-primary-600">Saved.</p>}
         {isAdmin && (
           <AdminButton type="submit" disabled={pending}>
             {pending ? "Saving…" : "Save"}

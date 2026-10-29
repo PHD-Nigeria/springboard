@@ -10,10 +10,10 @@ export function GuideChapterNav({ prev, next }: { prev: GuideEntry | null; next:
       {prev ? (
         <Link
           href={prev.href}
-          className="group flex-1 border border-border p-4 text-left hover:border-secondary-400"
+          className="group flex-1 border border-border p-4 text-left hover:border-primary-500"
         >
           <span className="font-body text-xs font-medium tracking-wide text-foreground-muted uppercase">← Previous</span>
-          <span className="mt-1 block font-body text-sm text-foreground group-hover:text-secondary-400">{prev.title}</span>
+          <span className="mt-1 block font-body text-sm text-foreground group-hover:text-primary-600">{prev.title}</span>
         </Link>
       ) : (
         <span className="flex-1" />
@@ -21,10 +21,10 @@ export function GuideChapterNav({ prev, next }: { prev: GuideEntry | null; next:
       {next ? (
         <Link
           href={next.href}
-          className="group flex-1 border border-border p-4 text-right hover:border-secondary-400"
+          className="group flex-1 border border-border p-4 text-right hover:border-primary-500"
         >
           <span className="font-body text-xs font-medium tracking-wide text-foreground-muted uppercase">Next →</span>
-          <span className="mt-1 block font-body text-sm text-foreground group-hover:text-secondary-400">{next.title}</span>
+          <span className="mt-1 block font-body text-sm text-foreground group-hover:text-primary-600">{next.title}</span>
         </Link>
       ) : (
         <span className="flex-1" />

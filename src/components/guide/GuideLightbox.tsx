@@ -61,7 +61,7 @@ export function GuideLightbox({ children, className }: { children: React.ReactNo
             type="button"
             onClick={() => setOpen(null)}
             aria-label="Close"
-            className="fixed top-4 right-4 border border-border bg-surface px-3 py-1.5 font-body text-sm text-foreground hover:border-secondary-400"
+            className="fixed top-4 right-4 border border-border bg-surface px-3 py-1.5 font-body text-sm text-foreground hover:border-primary-500"
           >
             Close ✕
           </button>

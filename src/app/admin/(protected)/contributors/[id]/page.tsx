@@ -48,7 +48,7 @@ export default async function EditContributorPage({ params }: { params: Promise<
           {total > articles.length && (
             <Link
               href={`/admin/content?author_id=${id}`}
-              className="mt-3 inline-block font-body text-sm text-foreground-muted hover:text-secondary-400"
+              className="mt-3 inline-block font-body text-sm text-foreground-muted hover:text-primary-600"
             >
               View all {total} →
             </Link>

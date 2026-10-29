@@ -42,10 +42,24 @@ export interface ContentListFilters {
   sectionId?: string;
   authorId?: string;
   publicationId?: string;
+  /** Restrict to rows created by this user ("My work"). RLS still decides what is visible. */
+  createdBy?: string;
+  /** Only rows with no publication, i.e. not linked to any quarterly edition. */
+  noPublication?: boolean;
   search?: string;
+  sort?: ContentListSort;
   page?: number;
   pageSize?: number;
 }
+
+export type ContentListSort = "updated_desc" | "updated_asc" | "title_asc" | "status";
+
+export const CONTENT_LIST_SORTS: { value: ContentListSort; label: string }[] = [
+  { value: "updated_desc", label: "Recently updated" },
+  { value: "updated_asc", label: "Waiting longest" },
+  { value: "title_asc", label: "Title A to Z" },
+  { value: "status", label: "Status" },
+];
 
 export async function listContent(filters: ContentListFilters = {}) {
   const supabase = await createClient();
@@ -62,10 +76,25 @@ export async function listContent(filters: ContentListFilters = {}) {
   if (filters.sectionId) query = query.eq("section_id", filters.sectionId);
   if (filters.authorId) query = query.eq("author_id", filters.authorId);
   if (filters.publicationId) query = query.eq("publication_id", filters.publicationId);
-  if (filters.search) query = query.or(`title.ilike.%${filters.search}%,slug.ilike.%${filters.search}%`);
+  if (filters.noPublication) query = query.is("publication_id", null);
+  if (filters.createdBy) query = query.eq("created_by", filters.createdBy);
+  if (filters.search) {
+    // Strip characters that have meaning inside a PostgREST .or() filter so a search for "a,b" or "(x)" cannot alter the filter itself.
+    const term = filters.search.replace(/[,()*%\\]/g, " ").trim();
+    if (term) query = query.or(`title.ilike.%${term}%,slug.ilike.%${term}%`);
+  }
 
-  const { data, error, count } = await query
-    .order("updated_at", { ascending: false })
+  const sort = filters.sort ?? "updated_desc";
+  const ordered =
+    sort === "title_asc"
+      ? query.order("title", { ascending: true })
+      : sort === "updated_asc"
+        ? query.order("updated_at", { ascending: true })
+        : sort === "status"
+          ? query.order("status", { ascending: true }).order("updated_at", { ascending: false })
+          : query.order("updated_at", { ascending: false });
+
+  const { data, error, count } = await ordered
     .range(from, to)
     .returns<AdminContentRow[]>();
 
@@ -725,4 +754,82 @@ export async function listAuditActors(): Promise<{ id: string; label: string }[]
   const { data, error } = await supabase.rpc("list_actor_profiles");
   if (error) return [];
   return (data ?? []).map((row) => ({ id: row.id, label: row.full_name ?? row.email ?? row.id }));
+}
+
+
+/** Items waiting for an editor. RLS-scoped, so for a contributor this is only their own. */
+export async function getReviewQueueCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase.from("content").select("id", { count: "exact", head: true }).eq("status", "review");
+  if (error) {
+    console.error("review count failed:", error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+export type ContentStatusCounts = Record<ContentStatus, number>;
+
+function emptyStatusCounts(): ContentStatusCounts {
+  return { draft: 0, review: 0, scheduled: 0, published: 0, archived: 0 };
+}
+
+/** Status counts for the signed-in user's own content. Real query, scoped by created_by. */
+export async function getMyWorkCounts(userId: string): Promise<ContentStatusCounts> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("content").select("status").eq("created_by", userId);
+  if (error) throw error;
+  const counts = emptyStatusCounts();
+  for (const row of data ?? []) counts[row.status] += 1;
+  return counts;
+}
+
+export interface EditionSnapshot {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  counts: ContentStatusCounts;
+  total: number;
+  sectionCount: number;
+}
+
+/**
+ * The active edition is the Site Settings default publication (the same value that
+ * pre-selects a publication for new content). Counts are live queries, never cached.
+ */
+export async function getActiveEditionSnapshot(): Promise<EditionSnapshot | null> {
+  const supabase = await createClient();
+  const { data: settings, error: settingsError } = await supabase
+    .from("site_settings")
+    .select("default_publication_id")
+    .eq("id", true)
+    .maybeSingle();
+  if (settingsError) throw settingsError;
+  const id = settings?.default_publication_id;
+  if (!id) return null;
+  return getEditionSnapshotById(id);
+}
+
+export async function getEditionSnapshotById(id: string): Promise<EditionSnapshot | null> {
+  const supabase = await createClient();
+  const [pub, content, sections] = await Promise.all([
+    supabase.from("publications").select("id, title, slug, status").eq("id", id).maybeSingle(),
+    supabase.from("content").select("status").eq("publication_id", id),
+    supabase.from("sections").select("id", { count: "exact", head: true }).eq("publication_id", id),
+  ]);
+  if (pub.error) throw pub.error;
+  if (content.error) throw content.error;
+  if (!pub.data) return null;
+  const counts = emptyStatusCounts();
+  for (const row of content.data ?? []) counts[row.status] += 1;
+  return {
+    id: pub.data.id,
+    title: pub.data.title,
+    slug: pub.data.slug,
+    status: pub.data.status,
+    counts,
+    total: content.data?.length ?? 0,
+    sectionCount: sections.count ?? 0,
+  };
 }

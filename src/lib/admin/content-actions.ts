@@ -305,8 +305,27 @@ export async function setContentStatusAction(contentId: string, status: "publish
   } = await supabase.auth.getUser();
   if (!user) return { error: "Your session has expired — sign in again." };
 
-  const { data: before } = await supabase.from("content").select("title, status").eq("id", contentId).maybeSingle();
+  const { data: before } = await supabase
+    .from("content")
+    .select("title, status, content_type, body, publication_id")
+    .eq("id", contentId)
+    .maybeSingle();
   const statusBefore = before?.status ?? null;
+
+  // Same readiness bar as the editor's Publish (see mustStayPublishReady in saveContentAction):
+  // the list/queue shortcut must not be a way around it. Only checked when row data was readable;
+  // a row RLS hides is handled by the permission message below.
+  if (status === "published" && before) {
+    const blocks = (before.body as { blocks?: unknown } | null)?.blocks;
+    // Staff spotlights and birthdays keep their content in relational tables, so an empty block body is normal for them.
+    const usesBlocks = before.content_type !== "STAFF_SPOTLIGHT" && before.content_type !== "BIRTHDAY";
+    if (usesBlocks && (!Array.isArray(blocks) || blocks.length === 0)) {
+      return { error: "This story has no content blocks yet. Open it in the editor and add content before publishing." };
+    }
+    if (!before.publication_id) {
+      return { error: "This story is not linked to an edition. Open it in the editor and choose an edition before publishing." };
+    }
+  }
 
   const update: ContentUpdate = { status };
   if (status === "published") update.published_at = new Date().toISOString();
@@ -336,7 +355,9 @@ export async function setContentStatusAction(contentId: string, status: "publish
           ? "RESTORE"
           : statusBefore === "scheduled"
             ? "CANCEL_SCHEDULE"
-            : "UNPUBLISH";
+            : statusBefore === "review"
+              ? "UPDATE" // returned from review to draft: nothing was ever published, so it is not an unpublish
+              : "UNPUBLISH";
 
   await logAuditEvent(supabase, {
     actorUserId: user.id,

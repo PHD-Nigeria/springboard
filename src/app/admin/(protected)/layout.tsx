@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/session";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { getReviewQueueCount } from "@/lib/admin/queries";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import "@/components/admin/admin-theme.css";
 
 /**
  * Gates every /admin route except /admin/login. This redirect is a UX
@@ -13,10 +15,22 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
 
+  // Contributors never see the review queue entry, so the count is only fetched for roles that can act on it.
+  const reviewCount = session.role === "contributor" ? 0 : await getReviewQueueCount();
+
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav session={session} />
-      <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+    <div className="admin-theme min-h-screen bg-background text-foreground lg:flex">
+      <AdminSidebar session={{ email: session.email, role: session.role }} reviewCount={reviewCount} />
+      <div className="min-w-0 flex-1">
+        <nav aria-label="Skip links">
+          <a href="#admin-main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-secondary-400 focus:px-3 focus:py-2 focus:text-primary-900">
+            Skip to main content
+          </a>
+        </nav>
+        <main id="admin-main" className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

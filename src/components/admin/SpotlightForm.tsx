@@ -113,7 +113,7 @@ export function SpotlightForm({ content, staffOptions, categoryId, initialStaffI
           ))}
         </AdminSelect>
         {staffOptions.length === 0 && (
-          <p className="mt-1.5 font-body text-xs text-coral">
+          <p className="mt-1.5 font-body text-xs text-danger">
             No staff in the directory yet, add one at /admin/staff first.
           </p>
         )}

@@ -59,7 +59,7 @@ export function GuideSearch({ documents }: { documents: GuideSearchDocument[] })
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Search the guide…"
-        className="w-full border border-border bg-surface px-3 py-2 font-body text-sm text-foreground placeholder:text-foreground-muted focus:outline-none focus-visible:border-secondary-400"
+        className="w-full border border-border bg-surface px-3 py-2 font-body text-sm text-foreground placeholder:text-foreground-muted focus:outline-none focus-visible:border-primary-500"
       />
 
       {query.trim().length >= 2 && (

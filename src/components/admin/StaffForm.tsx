@@ -66,7 +66,7 @@ export function StaffForm({ staff }: { staff: AdminStaffRow | null }) {
           pattern="[a-z0-9\-]+"
         />
         {slugChanged && staff.spotlightCount + staff.contentMentionCount > 0 && (
-          <p className="mt-1.5 font-body text-xs text-coral">
+          <p className="mt-1.5 font-body text-xs text-danger">
             This person is referenced by {staff.spotlightCount + staff.contentMentionCount} piece
             {staff.spotlightCount + staff.contentMentionCount === 1 ? "" : "s"} of content, changing the slug
             changes their public profile URL immediately, and there is no redirect from the old one.

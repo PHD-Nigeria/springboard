@@ -124,7 +124,7 @@ export function ContentForm({
         </p>
       )}
       {content && !state.error && state.contentId && !pending && (
-        <p role="status" className="border border-secondary-400/50 bg-secondary-400/10 px-4 py-3 font-body text-sm text-secondary-400">
+        <p role="status" className="border border-primary-500 bg-primary-50 px-4 py-3 font-body text-sm text-primary-600">
           Saved.
         </p>
       )}
@@ -220,7 +220,7 @@ export function ContentForm({
           {content && <StatusBadge status={content.status} />}
         </div>
         {content?.status === "scheduled" && content.publish_at && (
-          <p className="mb-3 font-body text-sm text-coral">
+          <p className="mb-3 font-body text-sm text-danger">
             Scheduled for{" "}
             {new Date(content.publish_at).toLocaleString("en-GB", {
               day: "numeric",

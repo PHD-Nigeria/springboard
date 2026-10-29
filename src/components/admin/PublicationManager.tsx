@@ -120,10 +120,10 @@ export function PublicationManager({ initialPublications }: { initialPublication
               <p className="truncate font-body text-sm text-foreground">{publication.title}</p>
               <p className="truncate font-body text-xs text-foreground-muted">/{publication.slug}</p>
               <p className="mt-0.5 flex gap-3 font-body text-xs text-foreground-muted">
-                <Link href={`/admin/sections?publication_id=${publication.id}`} className="hover:text-secondary-400">
+                <Link href={`/admin/sections?publication_id=${publication.id}`} className="hover:text-primary-600">
                   {publication.sectionCount} {publication.sectionCount === 1 ? "section" : "sections"}
                 </Link>
-                <Link href={`/admin/content?publication_id=${publication.id}`} className="hover:text-secondary-400">
+                <Link href={`/admin/content?publication_id=${publication.id}`} className="hover:text-primary-600">
                   {publication.contentCount} {publication.contentCount === 1 ? "item" : "items"}
                 </Link>
               </p>

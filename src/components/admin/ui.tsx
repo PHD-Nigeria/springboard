@@ -20,7 +20,7 @@ export function AdminLabel({ className = "", ...props }: LabelHTMLAttributes<HTM
 }
 
 const fieldClass =
-  "w-full border border-border bg-surface px-3 py-2 font-body text-sm text-foreground placeholder:text-foreground-muted focus:outline-none focus-visible:border-secondary-400";
+  "w-full border border-border bg-surface px-3 py-2 font-body text-sm text-foreground placeholder:text-foreground-muted focus:outline-none focus-visible:border-primary-500";
 
 export const AdminInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function AdminInput(
   { className = "", ...props },
@@ -81,20 +81,66 @@ export function AdminPageHeader({
   );
 }
 
-const STATUS_CLASSES: Record<string, string> = {
-  draft: "text-foreground-muted border-border",
-  review: "text-lavender border-lavender",
-  scheduled: "text-coral border-coral",
-  published: "text-secondary-400 border-secondary-400",
-  archived: "text-foreground-muted border-border",
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  review: "In review",
+  scheduled: "Scheduled",
+  published: "Published",
+  archived: "Archived",
 };
+
+/** Marker colours use the PHD palette; the label is always body-ink text so contrast never depends on a brand colour. */
+const STATUS_MARKER: Record<string, string> = {
+  draft: "bg-border-strong",
+  review: "bg-lavender",
+  scheduled: "bg-coral",
+  published: "bg-secondary-400",
+  archived: "bg-foreground-muted",
+};
+
+export function statusLabel(status: string): string {
+  return STATUS_LABELS[status] ?? status;
+}
 
 export function StatusBadge({ status }: { status: string }) {
   return (
-    <span
-      className={`inline-block border px-2 py-0.5 font-body text-xs font-medium tracking-wide uppercase ${STATUS_CLASSES[status] ?? "text-foreground-muted border-border"}`}
-    >
-      {status}
+    <span className="inline-flex items-center gap-1.5 border border-border bg-surface px-2 py-0.5 font-body text-xs font-medium whitespace-nowrap text-foreground">
+      <span aria-hidden="true" className={`inline-block h-2 w-2 ${STATUS_MARKER[status] ?? "bg-border-strong"}`} />
+      {statusLabel(status)}
     </span>
+  );
+}
+
+/** Inline feedback. Errors are announced assertively, successes politely; never show success for a failed action. */
+export function AdminNotice({
+  tone,
+  children,
+  className = "",
+}: {
+  tone: "error" | "success" | "info";
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const toneClass = {
+    error: "border-danger bg-danger/10",
+    success: "border-primary-500 bg-primary-50",
+    info: "border-border-strong bg-surface-raised",
+  }[tone];
+  return (
+    <p
+      role={tone === "error" ? "alert" : "status"}
+      className={`border px-4 py-3 font-body text-sm text-foreground ${toneClass} ${className}`}
+    >
+      {children}
+    </p>
+  );
+}
+
+export function AdminEmptyState({ title, children }: { title: string; children?: React.ReactNode }) {
+  return (
+    <div className="border border-dashed border-border-strong bg-surface px-6 py-10 text-center">
+      <p className="font-display text-base font-medium text-foreground">{title}</p>
+      {children && <div className="mt-1 font-body text-sm text-foreground-muted">{children}</div>}
+    </div>
   );
 }
