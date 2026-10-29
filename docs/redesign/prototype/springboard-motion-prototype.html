@@ -1,0 +1,905 @@
+<title>Springboard Edition Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<style>
+/* Layout concept: a purple "cover" stage with a slow photographic ribbon, opening onto light paper reading pages; every story carries its edition label, derived from the edition record. */
+:root{
+  color-scheme: light;
+  /* Brand — exact values from src/design-system/tokens/theme.css */
+  --purple:#3A008C; --lime:#9FEA47; --coral:#FF7373; --lavender:#9B83FF; --pink:#FF70F2;
+  /* Derived neutrals (mixes of PHD Purple, not new hues) */
+  --purple-deep:#24005A;   /* footer, overlays */
+  --ink:#1A0B3B;           /* body text on paper */
+  --paper:#F6F3FA;         /* reading surface */
+  --paper-raised:#FFFFFF;
+  --muted-paper:#5B4F72;   /* 6.8:1 on paper */
+  --muted-purple:#D9CCF5;  /* 8.9:1 on purple */
+  --rule-paper:#8E83A6;    /* 3.3:1 on paper — real UI edges */
+  --hair-paper:#E2DBEE;    /* decorative only */
+  /* Pillar roles */
+  --pillar-people:var(--coral); --pillar-company:var(--lavender); --pillar-engage:var(--lime); --celebrate:var(--pink);
+  /* Type */
+  --display:"Syne", "Arial Black", system-ui, sans-serif;
+  --body-syne:"Syne", system-ui, sans-serif;
+  --body-read:"Newsreader", Georgia, "Times New Roman", serif;
+  --body:var(--body-syne);
+  --ui:"Syne", system-ui, sans-serif;
+  /* Motion system */
+  --d-micro:160ms; --d-ui:240ms; --d-reveal:720ms; --d-page:560ms;
+  --e-out:cubic-bezier(.16,1,.3,1); --e-std:cubic-bezier(.4,0,.2,1); --e-in:cubic-bezier(.7,0,.84,0);
+  --gutter:clamp(16px,4vw,56px);
+}
+html.read-face{--body:var(--body-read)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--body-syne);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit}
+button{font:inherit;color:inherit}
+h1,h2,h3,h4{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.02;letter-spacing:-.015em}
+p{margin:0}
+.wrap{max-width:84rem;margin:0 auto;padding-left:max(var(--gutter),env(safe-area-inset-left,0px));padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:3px solid var(--purple);outline-offset:3px;border-radius:2px}
+[tabindex="-1"]:focus{outline:none}
+.on-purple :focus-visible,.site-header :focus-visible,.drawer :focus-visible,.hero :focus-visible{outline-color:var(--lime)}
+.skip{position:fixed;left:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:200;background:var(--lime);color:var(--ink);padding:.6rem 1rem;font-weight:700;transform:translateY(-200%);transition:transform var(--d-ui) var(--e-out)}
+.skip:focus{transform:none}
+
+/* ---------- Edition label (derived from publication record) ---------- */
+.ed-label{display:inline-flex;align-items:center;gap:.5em;font:700 .72rem/1 var(--ui);letter-spacing:.12em;text-transform:uppercase}
+.ed-label .q{background:var(--purple);color:#fff;padding:.35em .55em;border-radius:2px;letter-spacing:.08em}
+.on-purple .ed-label .q{background:var(--lime);color:var(--ink)}
+.ed-label .pillar{padding:.35em .55em;border-radius:2px;color:var(--ink)}
+.ed-label .evergreen{border:1.5px solid var(--rule-paper);padding:.28em .5em;border-radius:2px;color:var(--muted-paper)}
+
+/* ---------- Header & navigation ---------- */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--purple)}
+.site-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;color:#fff;transition:background-color var(--d-ui) var(--e-std),box-shadow var(--d-ui) var(--e-std)}
+.site-header[data-mode="overlay"]{background:transparent}
+.site-header[data-mode="solid"],.site-header.is-scrolled{background:var(--purple);box-shadow:0 1px 0 rgba(255,255,255,.08),0 10px 30px -18px rgba(20,0,60,.7)}
+.hdr{display:flex;align-items:center;gap:2rem;height:76px;transition:height var(--d-ui) var(--e-out)}
+.site-header.is-scrolled .hdr{height:62px}
+.brand{display:flex;flex-direction:column;text-decoration:none;line-height:1}
+.brand b{font:800 1.2rem/1 var(--display);letter-spacing:.14em}
+.brand span{font:500 .62rem/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--muted-purple);margin-top:.35rem}
+.nav{display:flex;align-items:center;gap:.25rem;margin-left:auto}
+.nav > ul{display:flex;gap:.25rem;list-style:none;margin:0;padding:0;align-items:center}
+.nav-item{position:relative}
+.nav-trigger,.nav-link{display:inline-flex;align-items:center;gap:.45rem;background:none;border:0;cursor:pointer;padding:.6rem .8rem;font:600 .86rem/1 var(--ui);letter-spacing:.02em;text-decoration:none;color:#fff;position:relative}
+.nav-trigger::after,.nav-link::after{content:"";position:absolute;left:.8rem;right:.8rem;bottom:.3rem;height:2px;background:var(--lime);transform:scaleX(0);transform-origin:left;transition:transform var(--d-ui) var(--e-out)}
+.nav-trigger:hover::after,.nav-trigger[aria-expanded="true"]::after,.nav-link:hover::after,.nav-link[aria-current="page"]::after{transform:scaleX(1)}
+.chev{width:9px;height:9px;transition:transform var(--d-ui) var(--e-out)}
+.nav-trigger[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.panel{position:absolute;left:0;top:calc(100% + 6px);min-width:15.5rem;background:var(--paper-raised);color:var(--ink);border-radius:4px;padding:.5rem;box-shadow:0 24px 60px -24px rgba(26,11,59,.55);opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity var(--d-ui) var(--e-out),transform var(--d-ui) var(--e-out),visibility 0s linear var(--d-ui)}
+.panel::before{content:"";position:absolute;left:0;right:0;top:-8px;height:8px}
+.panel.open{opacity:1;visibility:visible;transform:none;transition:opacity var(--d-ui) var(--e-out),transform var(--d-ui) var(--e-out),visibility 0s}
+.panel a{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.7rem .8rem;border-radius:3px;text-decoration:none;font:600 .92rem/1.2 var(--ui)}
+.panel a .arr{opacity:0;transform:translateX(-4px);transition:opacity var(--d-micro) var(--e-out),transform var(--d-micro) var(--e-out)}
+.panel a:hover,.panel a:focus-visible{background:var(--paper)}
+.panel a:hover .arr,.panel a:focus-visible .arr{opacity:1;transform:none}
+.panel a .sw{width:.55rem;height:.55rem;border-radius:50%;flex:none;margin-right:.6rem;background:var(--sw)}
+.panel a span.l{display:flex;align-items:center}
+.edition-pill{margin-left:.75rem;display:inline-flex;white-space:nowrap;align-items:center;gap:.5rem;text-decoration:none;font:700 .76rem/1 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--lime);padding:.6rem .8rem;border-radius:999px;transition:transform var(--d-micro) var(--e-out)}
+.edition-pill:hover{transform:translateY(-1px)}
+.edition-pill:active{transform:translateY(1px) scale(.98)}
+.menu-btn{display:none;margin-left:auto;background:none;border:1.5px solid rgba(255,255,255,.55);border-radius:999px;padding:.55rem .95rem;font:700 .8rem/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+@media (max-width:980px){.nav{display:none}.menu-btn{display:inline-flex}.hdr .edition-pill{margin-left:auto}.hdr .menu-btn{margin-left:.5rem}}
+@media (max-width:480px){.hdr{gap:.6rem}.hdr .edition-pill .long{display:none}.hdr .edition-pill{padding:.55rem .7rem;margin-left:auto}.menu-btn{padding:.55rem .8rem}}
+
+/* Mobile drawer */
+.drawer{position:fixed;inset:0;z-index:120;background:var(--purple);color:#fff;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 14px) max(var(--gutter),env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(var(--gutter),env(safe-area-inset-left,0px));clip-path:inset(0 0 100% 0);visibility:hidden;transition:clip-path var(--d-page) var(--e-out),visibility 0s linear var(--d-page);overflow-y:auto}
+.drawer.open{clip-path:inset(0);visibility:visible;transition:clip-path var(--d-page) var(--e-out),visibility 0s}
+.drawer-top{display:flex;justify-content:space-between;align-items:center;height:56px}
+.drawer ul{list-style:none;margin:1.5rem 0 0;padding:0}
+.drawer > nav > ul > li{border-bottom:1px solid rgba(255,255,255,.16)}
+.acc{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:0;padding:1.1rem 0;font:700 1.6rem/1.1 var(--display);text-align:left;cursor:pointer;color:#fff}
+.acc .chev{width:14px;height:14px}
+.acc[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.acc-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--d-ui) var(--e-out)}
+.acc-panel.open{grid-template-rows:1fr}
+.acc-panel > div{overflow:hidden}
+.acc-panel a{display:block;padding:.65rem 0 .65rem 1rem;text-decoration:none;font:600 1.05rem/1.2 var(--ui);color:var(--muted-purple);border-left:2px solid var(--sw)}
+.acc-panel a:hover{color:#fff}
+.drawer .solo{display:block;padding:1.1rem 0;font:700 1.6rem/1.1 var(--display);text-decoration:none}
+.drawer-foot{margin-top:auto;padding-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap}
+
+/* ---------- Hero ---------- */
+.hero{background:var(--purple);color:#fff;margin-top:-76px;padding-top:76px;position:relative;overflow:hidden;min-height:min(100svh,1100px);display:flex;flex-direction:column}
+.hero .ribbon-wrap{margin-top:auto}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:clamp(1.5rem,4vw,4rem);align-items:end;padding-block:clamp(1.5rem,4svh,3.5rem) clamp(1.25rem,3svh,2.5rem)}
+.eyebrow{font:700 .74rem/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--lime);display:flex;gap:.75rem;align-items:center}
+.eyebrow::before{content:"";width:2.2rem;height:2px;background:currentColor}
+.hero h1{font-weight:800;font-size:clamp(2.3rem,min(5vw,8.5svh),5.4rem);line-height:.98;margin-top:1.1rem;letter-spacing:-.03em;max-width:15em}
+.hero h1 .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+.hero h1 .w > span{display:inline-block;animation:rise var(--d-reveal) var(--e-out) both;animation-delay:calc(var(--i) * 45ms + 120ms)}
+.hero h1 em{font-style:normal;color:var(--lime)}
+.hero .intro{margin-top:1.1rem;font-size:clamp(1.02rem,1.3vw,1.2rem);line-height:1.55;color:var(--muted-purple);max-width:34rem;animation:fade var(--d-reveal) var(--e-out) both;animation-delay:480ms}
+@keyframes rise{from{transform:translateY(105%)}to{transform:none}}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Latest edition card */
+.latest{display:grid;grid-template-columns:7.5rem 1fr;gap:1rem;align-items:stretch;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:.85rem;text-decoration:none;color:#fff;animation:fade var(--d-reveal) var(--e-out) both;animation-delay:600ms;transition:background-color var(--d-ui) var(--e-std),transform var(--d-ui) var(--e-out)}
+.latest:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
+.latest .cover{border-radius:3px;overflow:hidden;aspect-ratio:3/4;position:relative}
+.latest .cover .ph{position:absolute;inset:0}
+.latest .k{font:700 .68rem/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--lime)}
+.latest h2{font-size:clamp(1.5rem,2.2vw,2rem);margin-top:.5rem}
+.latest p{font-size:.88rem;color:var(--muted-purple);margin-top:.4rem;line-height:1.45}
+.latest .go{margin-top:.8rem;display:flex;gap:1rem;flex-wrap:wrap;font:700 .82rem/1 var(--ui)}
+.latest .go span:first-child{color:var(--lime)}
+.archive-link{display:inline-flex;margin-top:.9rem;font:600 .86rem/1 var(--ui);color:#fff;text-underline-offset:.3em}
+
+/* Ribbon */
+.ribbon{--row-h:clamp(190px,min(30vw,40svh),430px);--gap:clamp(10px,1.2vw,18px);position:relative;height:var(--row-h);margin-bottom:clamp(1.5rem,3vw,2.5rem);-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);overflow:hidden;contain:layout paint}
+.track{display:flex;width:max-content;height:100%;animation:ribbon var(--ribbon-dur,110s) linear infinite;will-change:transform}
+.set{display:flex;gap:var(--gap);padding:0 var(--gap) 0 0;margin:0;list-style:none;height:100%;align-items:stretch}
+@keyframes ribbon{to{transform:translate3d(-50%,0,0)}}
+.ribbon.is-paused .track,.ribbon.is-offscreen .track{animation-play-state:paused}
+.frame{position:relative;height:100%;aspect-ratio:var(--r);flex:none;margin:0}
+.frame.s-sm{height:72%;align-self:flex-start}.frame.s-md{height:86%;align-self:flex-end}.frame.s-lo{height:80%;align-self:center}
+.frame .img{position:absolute;inset:0;border-radius:3px;overflow:hidden}
+.frame .ph{position:absolute;inset:-2%;transition:transform 1.2s var(--e-out)}
+.frame:hover .ph{transform:scale(1.045)}
+.frame figcaption{position:absolute;left:.7rem;right:.7rem;bottom:.6rem;font:600 .72rem/1.25 var(--ui);color:#fff;text-shadow:0 1px 10px rgba(20,0,50,.6);display:flex;flex-direction:column;gap:.2rem}
+.frame figcaption b{font:700 .62rem/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--lime)}
+.frame .img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(36,0,90,.55));pointer-events:none}
+.ribbon-ctl{position:absolute;right:max(var(--gutter),env(safe-area-inset-right,0px));bottom:.9rem;z-index:2;display:inline-flex;align-items:center;gap:.5rem;background:rgba(36,0,90,.72);backdrop-filter:blur(8px);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:.5rem .8rem;font:700 .72rem/1 var(--ui);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.ribbon-wrap{position:relative}
+@media (max-width:860px){.hero-grid{grid-template-columns:1fr;align-items:start}.latest{grid-template-columns:6rem 1fr}}
+
+/* ---------- Placeholder photography (CSS only; replaced by CMS media) ---------- */
+.ph{background:
+  radial-gradient(120% 90% at var(--fx,30%) var(--fy,30%), color-mix(in oklab,var(--a) 85%, white) 0%, transparent 55%),
+  radial-gradient(80% 70% at calc(100% - var(--fx,30%)) 85%, color-mix(in oklab,var(--b) 70%, black) 0%, transparent 70%),
+  linear-gradient(var(--ang,155deg), var(--a), var(--b));}
+.ph::after{content:"";position:absolute;inset:0;opacity:.32;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.ph .tag{position:absolute;left:.55rem;top:.55rem;z-index:1;font:600 .58rem/1.2 ui-monospace,Consolas,monospace;letter-spacing:.04em;text-transform:uppercase;background:rgba(255,255,255,.86);color:#24005A;padding:.25rem .4rem;border-radius:2px;max-width:calc(100% - 1.1rem)}
+html.hide-tags .ph .tag{display:none}
+
+/* ---------- Generic sections on paper ---------- */
+main{display:block}
+.view{display:none}
+.view.active{display:block}
+.sec{padding-block:clamp(3.5rem,8vw,7rem)}
+.sec-head{display:flex;justify-content:space-between;align-items:end;gap:1.5rem;flex-wrap:wrap;margin-bottom:clamp(1.75rem,3vw,2.75rem)}
+.kicker{font:700 .72rem/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--muted-paper)}
+.sec-head h2{font-size:clamp(2rem,4.4vw,3.8rem);font-weight:800;margin-top:.7rem}
+.more{font:700 .86rem/1 var(--ui);text-decoration:none;display:inline-flex;gap:.5rem;align-items:center;padding-bottom:.3rem;border-bottom:2px solid var(--purple);color:var(--purple)}
+.more:hover .a{transform:translateX(3px)}
+.a{display:inline-block;transition:transform var(--d-micro) var(--e-out)}
+
+/* Contents (chapters) */
+.chapters{list-style:none;margin:0;padding:0;border-top:2px solid var(--ink)}
+.chapter{display:grid;grid-template-columns:5.5rem minmax(0,1fr) minmax(0,15rem);gap:1.5rem;padding-block:1.75rem;border-bottom:1px solid var(--rule-paper);align-items:start}
+.chapter .no{font:800 2.6rem/1 var(--display);color:var(--ink);background:var(--sw);letter-spacing:-.04em;padding:.35rem .5rem .25rem;border-radius:3px;justify-self:start}
+.chapter h3{font-size:clamp(1.4rem,2.4vw,2.1rem)}
+.chapter ul{list-style:none;padding:0;margin:.9rem 0 0;display:grid;gap:.45rem}
+.chapter li a{text-decoration:none;font:600 1rem/1.35 var(--ui);background:linear-gradient(var(--ink),var(--ink)) 0 100%/0 1.5px no-repeat;transition:background-size var(--d-ui) var(--e-out)}
+.chapter li a:hover{background-size:100% 1.5px}
+.chapter .thumb{aspect-ratio:4/3;position:relative;border-radius:3px;overflow:hidden;clip-path:inset(0 0 0 0);transition:clip-path var(--d-reveal) var(--e-out)}
+.chapter .thumb .ph{position:absolute;inset:0;transition:transform 1s var(--e-out)}
+.chapter:hover .thumb .ph{transform:scale(1.05)}
+@media (max-width:760px){.chapter{grid-template-columns:4.2rem minmax(0,1fr)}.chapter .no{font-size:1.9rem}.chapter .thumb{grid-column:1/-1;order:-1;aspect-ratio:16/9}}
+
+/* Featured split (portrait-aware) */
+.feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(1.5rem,5vw,5rem);align-items:center}
+.feature .pic{position:relative;aspect-ratio:4/5;border-radius:4px;overflow:hidden;max-height:82svh}
+.feature .pic .ph{position:absolute;inset:0}
+.feature h3{font-size:clamp(2rem,4vw,3.6rem);font-weight:800;margin-top:1rem}
+.feature .dek{margin-top:1.1rem;font-family:var(--body);font-size:1.18rem;line-height:1.55;color:var(--muted-paper);max-width:36rem}
+.meta{margin-top:1.1rem;font:500 .84rem/1.4 var(--ui);color:var(--muted-paper);display:flex;gap:.4rem;flex-wrap:wrap}
+@media (max-width:760px){.feature{grid-template-columns:1fr}}
+
+/* Purple band for pillar stories */
+.band{background:var(--purple);color:#fff}
+.stories{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(1.25rem,2.5vw,2.25rem)}
+.story{text-decoration:none;display:flex;flex-direction:column;gap:.85rem;min-width:0}
+.story .pic{position:relative;border-radius:3px;overflow:hidden;aspect-ratio:var(--r,4/3)}
+.story .pic .ph{position:absolute;inset:0;transition:transform 1s var(--e-out)}
+.story:hover .pic .ph{transform:scale(1.045)}
+.story h3{font-size:clamp(1.2rem,1.8vw,1.6rem);line-height:1.1}
+.story:hover h3{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:.18em}
+.story .date{font:500 .8rem/1 var(--ui);color:var(--muted-purple)}
+.c-7{grid-column:span 7}.c-5{grid-column:span 5}.c-4{grid-column:span 4}.c-3{grid-column:span 3}
+@media (max-width:860px){.c-7,.c-5,.c-4,.c-3{grid-column:span 12}}
+
+/* Celebrations */
+.celebrate{display:flex;gap:1.25rem;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1rem;list-style:none;margin:0;padding-left:0}
+.celebrate li{flex:none;width:11.5rem;scroll-snap-align:start;text-align:left}
+.celebrate .av{width:100%;aspect-ratio:1;border-radius:50%;position:relative;overflow:hidden;outline:3px solid var(--pink);outline-offset:4px}
+.celebrate .av .ph{position:absolute;inset:0}
+.celebrate b{display:block;margin-top:1rem;font:700 1rem/1.2 var(--ui)}
+.celebrate span{font:500 .84rem/1.3 var(--ui);color:var(--muted-paper)}
+
+/* Footer */
+.site-footer{background:var(--purple-deep);color:#fff;padding-block:4.5rem 2.5rem}
+.foot-grid{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:2rem}
+.foot-grid .fh{font:700 .72rem/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--lime);margin-bottom:1rem}
+.foot-grid ul{list-style:none;margin:0;padding:0;display:grid;gap:.55rem}
+.foot-grid a{text-decoration:none;color:var(--muted-purple);font:500 .95rem/1.3 var(--ui)}
+.foot-grid a:hover{color:#fff}
+.foot-big{font:800 clamp(3rem,12vw,10rem)/.85 var(--display);letter-spacing:-.04em;margin-top:3.5rem;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.35)}
+.foot-small{margin-top:1.5rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;font:500 .8rem/1.4 var(--ui);color:var(--muted-purple)}
+@media (max-width:760px){.foot-grid{grid-template-columns:1fr 1fr}}
+
+/* ---------- Editions archive ---------- */
+.page-head{background:var(--purple);color:#fff;padding-block:clamp(3rem,7vw,6rem) clamp(2rem,4vw,3.5rem)}
+.page-head h1{font-size:clamp(2.6rem,7vw,6.5rem);font-weight:800;margin-top:1rem;letter-spacing:-.03em}
+.page-head p{margin-top:1.1rem;color:var(--muted-purple);max-width:38rem;font-size:1.08rem}
+.ed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:clamp(1.25rem,2.5vw,2.25rem)}
+.ed-card{text-decoration:none;display:flex;flex-direction:column;gap:.9rem}
+.ed-card .cv{position:relative;aspect-ratio:3/4;border-radius:4px;overflow:hidden;background:var(--purple)}
+.ed-card .cv .ph{position:absolute;inset:0;transition:transform 1s var(--e-out)}
+.ed-card:hover .cv .ph{transform:scale(1.04)}
+.ed-card .cv .big{position:absolute;left:1rem;bottom:.9rem;font:800 3.4rem/.85 var(--display);color:#fff;letter-spacing:-.04em;text-shadow:0 2px 24px rgba(36,0,90,.5)}
+.ed-card .cv .big small{display:block;font:700 .62rem/1 var(--ui);letter-spacing:.18em;margin-bottom:.5rem;color:var(--lime)}
+.ed-card .cv .latest-flag{position:absolute;right:.7rem;top:.7rem;background:var(--lime);color:var(--ink);font:700 .64rem/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;padding:.4rem .55rem;border-radius:2px}
+.ed-card h2{font-size:1.25rem}
+.ed-card p{font:500 .84rem/1.4 var(--ui);color:var(--muted-paper)}
+.note{border:1.5px dashed var(--rule-paper);border-radius:4px;padding:1rem 1.1rem;font:500 .88rem/1.5 var(--ui);color:var(--muted-paper);margin-top:2rem}
+.note b{color:var(--ink)}
+
+/* ---------- Edition landing ---------- */
+.ed-cover{background:var(--purple);color:#fff;margin-top:-76px;padding-top:76px}
+.ed-cover-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(1.5rem,4vw,4rem);align-items:end;padding-block:clamp(2rem,5vw,4rem)}
+.ed-cover .num{margin:0;font:800 clamp(5rem,16vw,14rem)/.8 var(--display);letter-spacing:-.05em}
+.ed-cover .num small{display:block;font:700 .78rem/1 var(--ui);letter-spacing:.2em;color:var(--lime);margin-bottom:1.2rem}
+.ed-cover .cvimg{position:relative;aspect-ratio:3/2;border-radius:4px;overflow:hidden;clip-path:inset(0);animation:clipIn 1s var(--e-out) both .1s}
+.ed-cover .cvimg .ph{position:absolute;inset:0}
+@keyframes clipIn{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0)}}
+.ed-cover .facts{display:flex;gap:2rem;flex-wrap:wrap;margin-top:1.5rem;font:500 .86rem/1.4 var(--ui);color:var(--muted-purple)}
+.ed-cover .facts b{display:block;color:#fff;font-weight:700}
+.filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+.chip{border:1.5px solid var(--rule-paper);background:transparent;border-radius:999px;padding:.55rem .95rem;font:700 .8rem/1 var(--ui);cursor:pointer;color:var(--ink);transition:background-color var(--d-micro) var(--e-std),border-color var(--d-micro) var(--e-std)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:2rem 1.75rem}
+.list .story .date{color:var(--muted-paper)}
+.list .story[hidden]{display:none}
+@media (max-width:860px){.ed-cover-grid{grid-template-columns:1fr}}
+
+/* ---------- Story template ---------- */
+.st-land .st-hero-img{position:relative;height:min(78svh,760px);overflow:hidden;margin-top:-76px}
+.st-land .st-hero-img .ph{position:absolute;inset:0;animation:settle 1.6s var(--e-out) both}
+@keyframes settle{from{transform:scale(1.08)}to{transform:none}}
+.st-land .st-title{background:var(--paper);position:relative;margin-top:-7rem;padding-top:2.25rem;max-width:58rem}
+.st-title h1{font-size:clamp(2.3rem,5.5vw,4.8rem);font-weight:800;margin-top:1rem}
+.st-title .dek{margin-top:1.1rem;font-family:var(--body);font-size:clamp(1.15rem,1.6vw,1.35rem);line-height:1.5;color:var(--muted-paper);max-width:42rem}
+.st-port{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);min-height:min(88svh,860px);margin-top:-76px}
+.st-port .text{background:var(--purple);color:#fff;padding:calc(76px + 3rem) var(--gutter) 3rem;display:flex;flex-direction:column;justify-content:flex-end}
+.st-port .text .dek,.st-port .text .meta{color:var(--muted-purple)}
+.st-port h1{font-size:clamp(2.3rem,4.6vw,4.6rem);font-weight:800;margin-top:1rem}
+.st-port .dek{margin-top:1.1rem;font-family:var(--body);font-size:clamp(1.1rem,1.5vw,1.3rem);line-height:1.5;max-width:36rem}
+.st-port .pic{position:relative;overflow:hidden}
+.scrim::before{content:"";position:absolute;inset:0 0 auto;height:200px;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(36,0,90,.72),rgba(36,0,90,0))}
+.st-hero-img .ph .tag,.st-port .pic .ph .tag{top:auto;bottom:.8rem;z-index:2}
+.st-port .pic .ph{position:absolute;inset:0;animation:settle 1.6s var(--e-out) both}
+@media (max-width:860px){.st-port{grid-template-columns:1fr}.st-port .pic{aspect-ratio:4/5;order:-1}.st-port .text{padding-top:2rem}.st-land .st-title{margin-top:-3rem}}
+.orient{display:inline-flex;align-self:flex-start;border:1.5px solid var(--rule-paper);border-radius:999px;padding:3px;gap:3px;margin-top:1.5rem}
+.orient button{border:0;background:transparent;padding:.45rem .8rem;border-radius:999px;font:700 .74rem/1 var(--ui);cursor:pointer;letter-spacing:.04em}
+.orient button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.st-port .orient{border-color:rgba(255,255,255,.5)}
+.st-port .orient button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.prose{max-width:40rem;margin:0 auto;padding-block:3.5rem 5rem;font-family:var(--body);font-size:1.16rem;line-height:1.72}
+html.read-face .prose{font-size:1.24rem}
+.prose > * + *{margin-top:1.35em}
+.prose h2{font-size:1.9rem;font-weight:800;margin-top:2.2em;line-height:1.1}
+.prose figure{margin:2.4em 0}
+.prose figure.wide{margin-left:calc(50% - min(46vw,36rem));margin-right:calc(50% - min(46vw,36rem))}
+.prose figure .pic{position:relative;border-radius:3px;overflow:hidden;aspect-ratio:var(--r)}
+.prose figure.portrait .pic{max-height:80svh;margin:0 auto;width:min(100%,calc(80svh*4/5))}
+.prose figure .pic .ph{position:absolute;inset:0}
+.prose figcaption{margin-top:.75rem;font:500 .84rem/1.45 var(--ui);color:var(--muted-paper);display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.prose figcaption .credit{font-weight:700;letter-spacing:.04em}
+.pull{font-family:var(--display);font-weight:700;font-size:clamp(1.6rem,3vw,2.3rem);line-height:1.15;border-left:6px solid var(--lavender);padding-left:1.25rem;margin:2.2em 0}
+.pull cite{display:block;margin-top:.8rem;font:600 .86rem/1.3 var(--ui);font-style:normal;color:var(--muted-paper)}
+.yt{position:relative;aspect-ratio:16/9;border-radius:4px;overflow:hidden;background:var(--purple-deep)}
+.yt .ph{position:absolute;inset:0}
+.yt button{position:absolute;inset:0;width:100%;border:0;background:transparent;cursor:pointer;display:grid;place-items:center}
+.yt .play{width:4.6rem;height:4.6rem;border-radius:50%;background:var(--lime);display:grid;place-items:center;transition:transform var(--d-ui) var(--e-out);box-shadow:0 12px 30px -10px rgba(0,0,0,.5)}
+.yt button:hover .play{transform:scale(1.08)}
+.event{display:grid;grid-template-columns:auto 1fr;gap:1.25rem;border:2px solid var(--ink);border-radius:4px;padding:1.25rem;font-family:var(--ui)}
+.event .day{background:var(--lavender);color:var(--ink);border-radius:3px;padding:.7rem .9rem;text-align:center;font-weight:800;line-height:1}
+.event .day b{display:block;font-size:2.2rem}
+.event dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.35rem 1rem;font-size:.95rem}
+.event dt{font-weight:700}
+.event dd{margin:0;color:var(--muted-paper)}
+.btn{display:inline-flex;align-items:center;gap:.5rem;background:var(--purple);color:#fff;text-decoration:none;border:0;border-radius:999px;padding:.8rem 1.15rem;font:700 .86rem/1 var(--ui);cursor:pointer;transition:transform var(--d-micro) var(--e-out),background-color var(--d-micro) var(--e-std)}
+.btn:hover{background:var(--purple-deep)}
+.btn:active{transform:scale(.97)}
+.source{font:500 .86rem/1.5 var(--ui);color:var(--muted-paper);border-top:1px solid var(--rule-paper);padding-top:1rem}
+
+/* ---------- Gallery ---------- */
+.justified{display:flex;flex-wrap:wrap;gap:12px}
+.justified::after{content:"";flex-grow:999999}
+.g-item{position:relative;flex-grow:calc(var(--r) * 100);flex-basis:calc(var(--r) * clamp(150px,18vw,260px));aspect-ratio:var(--r);border:0;padding:0;cursor:zoom-in;border-radius:3px;overflow:hidden;background:var(--purple)}
+.g-item .ph{position:absolute;inset:0;transition:transform 1s var(--e-out)}
+.g-item:hover .ph{transform:scale(1.04)}
+.g-item .n{position:absolute;left:.55rem;bottom:.5rem;font:700 .7rem/1 var(--ui);color:#fff;letter-spacing:.06em;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+dialog.lb{border:0;padding:0;width:100vw;height:100dvh;max-width:none;max-height:none;background:rgba(18,0,46,.96);color:#fff}
+dialog.lb::backdrop{background:transparent}
+.lb-inner{display:grid;grid-template-rows:auto 1fr auto;height:100%;padding:calc(env(safe-area-inset-top,0px) + 14px) max(var(--gutter),env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 18px) max(var(--gutter),env(safe-area-inset-left,0px))}
+.lb-top{display:flex;justify-content:space-between;align-items:center;font:700 .8rem/1 var(--ui);letter-spacing:.1em}
+.lb-stage{display:grid;place-items:center;min-height:0;padding-block:1rem}
+.lb-pic{position:relative;max-width:100%;max-height:100%;height:100%;aspect-ratio:var(--r);border-radius:3px;overflow:hidden;animation:lbIn var(--d-ui) var(--e-out)}
+.lb-pic .ph{position:absolute;inset:0}
+@keyframes lbIn{from{opacity:.0;transform:scale(.985)}to{opacity:1;transform:none}}
+.lb-bottom{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.lb-bottom p{font:500 .9rem/1.4 var(--ui);color:var(--muted-purple)}
+.lb-btn{background:transparent;border:1.5px solid rgba(255,255,255,.5);border-radius:999px;padding:.6rem .95rem;font:700 .8rem/1 var(--ui);cursor:pointer;color:#fff}
+.lb-btn:hover{background:rgba(255,255,255,.1)}
+
+
+/* ---------- Admin sketch (editorial workflow for editions) ---------- */
+.adm{background:#EFEBF5;padding-block:2.5rem 5rem;font-family:var(--ui)}
+.adm-shell{display:grid;grid-template-columns:13rem minmax(0,1fr);gap:1.5rem;align-items:start}
+.adm-side{background:#fff;border:1px solid var(--rule-paper);border-radius:6px;padding:1rem;display:grid;gap:1rem;font-size:.88rem}
+.adm-side h2{font:700 .68rem/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted-paper);margin-bottom:.4rem}
+.adm-side ul{list-style:none;margin:0;padding:0;display:grid;gap:.15rem}
+.adm-side a{display:block;padding:.4rem .5rem;border-radius:3px;text-decoration:none;font-weight:600}
+.adm-side a[aria-current="page"]{background:var(--purple);color:#fff}
+.adm-card{background:#fff;border:1px solid var(--rule-paper);border-radius:6px;padding:1.25rem}
+.adm-card + .adm-card{margin-top:1.25rem}
+.adm h1{font-size:1.6rem}
+.adm .row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:end;margin-top:1rem}
+.adm label.f{display:grid;gap:.35rem;font:700 .78rem/1.2 var(--ui)}
+.adm select,.adm input[type=text]{font:500 .92rem/1.2 var(--ui);color:var(--ink);background:#fff;border:1.5px solid var(--rule-paper);border-radius:4px;padding:.55rem .65rem;min-width:12rem}
+.adm table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:1rem}
+.adm th,.adm td{text-align:left;padding:.6rem .5rem;border-bottom:1px solid var(--hair-paper)}
+.adm th{font:700 .7rem/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted-paper)}
+.adm .tw{overflow-x:auto}
+.badge{display:inline-block;font:700 .7rem/1 var(--ui);padding:.3rem .45rem;border-radius:2px;border:1.5px solid currentColor}
+.b-pub{color:#1f6b35}.b-draft{color:var(--muted-paper)}.b-review{color:#5a35c9}
+.scope{display:grid;gap:.5rem;margin-top:.75rem}
+.scope label{display:flex;gap:.6rem;align-items:flex-start;border:1.5px solid var(--rule-paper);border-radius:4px;padding:.7rem .8rem;cursor:pointer;font:500 .9rem/1.35 var(--ui)}
+.scope label:has(input:checked){border-color:var(--purple);background:#F3EEFB}
+.scope b{display:block;font-weight:700}
+.scope small{color:var(--muted-paper)}
+.err{margin-top:.9rem;border-left:4px solid #B3261E;background:#FCEEEE;color:#7A1712;padding:.7rem .8rem;font:600 .88rem/1.4 var(--ui)}
+.okmsg{margin-top:.9rem;border-left:4px solid #1F6B35;background:#EAF6EE;color:#14522A;padding:.7rem .8rem;font:600 .88rem/1.4 var(--ui)}
+@media (max-width:860px){.adm-shell{grid-template-columns:1fr}}
+
+/* ---------- Page transition ---------- */
+.curtain{position:fixed;inset:0;z-index:150;background:var(--purple);pointer-events:none;clip-path:inset(100% 0 0 0);display:grid;place-items:center}
+.curtain span{font:800 1rem/1 var(--display);letter-spacing:.3em;color:var(--lime);opacity:0}
+.curtain.cover{clip-path:inset(0 0 0 0);transition:clip-path var(--d-page) var(--e-out)}
+.curtain.cover span{opacity:1;transition:opacity 200ms linear 200ms}
+.curtain.leave{clip-path:inset(0 0 100% 0);transition:clip-path var(--d-page) var(--e-out)}
+
+/* Scroll reveal: resting state is visible; only offset + clip animate */
+.js .rv{transition:transform var(--d-reveal) var(--e-out),clip-path var(--d-reveal) var(--e-out)}
+.js .rv.pre{transform:translateY(28px)}
+.js .rv-clip.pre{clip-path:inset(12% 0 0 0)}
+
+/* ---------- Review controls (prototype only) ---------- */
+.review{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:140;font:500 12px/1.3 system-ui,sans-serif;color:#1A0B3B}
+.review > button{background:#fff;border:1px solid #8E83A6;border-radius:999px;padding:.55rem .85rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px -12px rgba(26,11,59,.6)}
+.review .box[hidden]{display:none}
+.review .box{position:absolute;left:0;bottom:calc(100% + 8px);width:min(19rem,calc(100vw - 24px));background:#fff;border:1px solid #8E83A6;border-radius:8px;padding:.9rem;display:grid;gap:.7rem;box-shadow:0 16px 40px -16px rgba(26,11,59,.6)}
+.review label{display:flex;justify-content:space-between;gap:.5rem;align-items:center}
+.review select{font:inherit;padding:.25rem}
+.review .hint{color:#5B4F72}
+.review a{color:#3A008C}
+
+/* ---------- Reduced motion (OS setting or review toggle) ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important;scroll-behavior:auto!important}
+  .track{animation:none!important}
+  .ribbon{overflow-x:auto;-webkit-mask-image:none;mask-image:none;scroll-snap-type:x proximity}
+  .set[aria-hidden="true"]{display:none}
+  .set .frame{scroll-snap-align:start}
+  .ribbon-ctl{display:none}
+}
+html.rm *,html.rm *::before,html.rm *::after{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important}
+html.rm .track{animation:none!important}
+html.rm .ribbon{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
+html.rm .set[aria-hidden="true"]{display:none}
+html.rm .ribbon-ctl{display:none}
+</style>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- Header: items mirror the CMS nav_items rows (migration 20260924000000). In the app these come from getPublicNavItems(), never hard-coded. -->
+<header class="site-header" id="hdr" data-mode="overlay">
+  <div class="wrap hdr">
+    <a class="brand" href="#home" data-route><b>SPRINGBOARD</b><span>PHD Nigeria</span></a>
+    <nav class="nav" aria-label="Primary" id="primary-nav"><ul id="nav-list"></ul></nav>
+    <a class="edition-pill" href="#edition" data-route data-latest-pill><span class="long">Latest edition · </span><span data-latest-short>Q2 ’26</span></a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="drawer" id="menu-btn">Menu</button>
+  </div>
+</header>
+
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+  <div class="drawer-top">
+    <span class="brand"><b>SPRINGBOARD</b><span>PHD Nigeria</span></span>
+    <button class="menu-btn" type="button" id="drawer-close" style="display:inline-flex">Close</button>
+  </div>
+  <nav aria-label="Primary (mobile)"><ul id="drawer-list"></ul></nav>
+  <div class="drawer-foot">
+    <a class="edition-pill" href="#edition" data-route style="margin:0">Latest edition · Q2 ’26</a>
+    <a class="edition-pill" href="#editions" data-route style="margin:0;background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.5)">All editions</a>
+  </div>
+</div>
+
+<main id="main" tabindex="-1">
+
+<!-- =============== HOME =============== -->
+<section class="view active" data-view="home" aria-label="Home">
+  <div class="hero on-purple">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">The staff publication of PHD Nigeria</p>
+        <!-- Headline = existing CMS default banner copy (site_settings.banner_title fallback in src/app/page.tsx) -->
+        <h1 data-words>Where PHD Nigeria’s people, ideas, and <em>culture</em> come together.</h1>
+        <p class="intro">A space for the stories, insights, and voices that shape how we work.</p>
+      </div>
+      <div>
+        <a class="latest" href="#edition" data-route aria-label="Open the latest edition, Springboard Q2 2026">
+          <span class="cover"><span class="ph" style="--a:#7d5bd6;--b:#2b0a6e;--fx:60%;--fy:25%"><span class="tag">Cover · 3:4</span></span></span>
+          <span>
+            <span class="k">Latest edition</span>
+            <h2>Q2 ’26</h2>
+            <p data-latest-range>April – June 2026 · 4 sections</p>
+            <span class="go"><span>Open the edition <span class="a">→</span></span></span>
+          </span>
+        </a>
+        <a class="archive-link" href="#editions" data-route>Browse all editions</a>
+      </div>
+    </div>
+
+    <div class="ribbon-wrap">
+      <div class="ribbon" id="ribbon" aria-roledescription="moving photo strip" aria-label="Photographs from the latest edition">
+        <div class="track" id="track"><ul class="set" id="set-a"></ul></div>
+      </div>
+      <button class="ribbon-ctl" id="ribbon-ctl" type="button" aria-pressed="false" aria-controls="ribbon">Pause motion</button>
+    </div>
+  </div>
+
+  <section class="sec" aria-labelledby="h-contents">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><p class="kicker">In this edition · Q2 ’26</p><h2 id="h-contents">Contents</h2></div>
+        <a class="more" href="#edition" data-route>Open the full edition <span class="a">→</span></a>
+      </div>
+      <ol class="chapters" id="chapters"></ol>
+    </div>
+  </section>
+
+  <section class="sec" style="padding-top:0" aria-labelledby="h-feature">
+    <div class="wrap feature rv">
+      <div class="pic rv-clip rv"><span class="ph" style="--a:#b6a0f2;--b:#3a1c84;--fx:45%;--fy:22%"><span class="tag">Placeholder · portrait 4:5 · spotlight subject</span></span></div>
+      <div>
+        <span class="ed-label"><span class="q">Q2 ’26</span><span class="pillar" style="background:var(--pillar-people)">Staff Spotlight</span></span>
+        <h3 id="h-feature">Portrait covers sit beside the story, never inside black bars.</h3>
+        <p class="dek">Sample feature slot. The layout switches on the image’s recorded orientation, so a portrait cover gets a split composition instead of a letterbox.</p>
+        <p class="meta"><span>Interview</span><span aria-hidden="true">·</span><span>25 September 2026</span></p>
+        <p style="margin-top:1.75rem"><a class="btn" href="#story" data-route data-orient="portrait">Read the story <span class="a">→</span></a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band sec on-purple" aria-labelledby="h-company">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><p class="kicker" style="color:var(--muted-purple)">Company &amp; Business · Q2 ’26</p><h2 id="h-company">Company News</h2></div>
+        <a class="more" href="#edition" data-route style="color:#fff;border-color:var(--lime)">All Company News <span class="a">→</span></a>
+      </div>
+      <div class="stories" id="company-stories"></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="h-cel">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><p class="kicker">Staff News · Q2 ’26</p><h2 id="h-cel">Celebrations</h2></div>
+        <a class="more" href="#edition" data-route>All Staff News <span class="a">→</span></a>
+      </div>
+      <ul class="celebrate" id="celebrate" tabindex="0" aria-label="Celebrations this quarter, scrolls sideways"></ul>
+      <p class="note">Birthdays live in their own band and are never the homepage lead. The names here are placeholders. Real names come from <b>staff</b> records linked through <b>content_staff</b>.</p>
+    </div>
+  </section>
+</section>
+
+<!-- =============== EDITIONS ARCHIVE =============== -->
+<section class="view" data-view="editions" aria-label="Editions">
+  <div class="page-head on-purple" style="margin-top:-76px;padding-top:calc(76px + clamp(3rem,7vw,6rem))">
+    <div class="wrap">
+      <p class="eyebrow">Quarterly archive</p>
+      <h1>Every edition of Springboard</h1>
+      <p>Newest first. Each card is generated from a published publication record. Quarters are never hard-coded.</p>
+    </div>
+  </div>
+  <div class="sec"><div class="wrap">
+    <div class="ed-grid" id="ed-grid"></div>
+    <p class="note"><b>Fixture data.</b> Only Q2 ’26 (<code>springboard-q2-26</code>) is known to exist on production. The earlier quarters are fictional records that show how the archive scales. A draft Q3 ’26 record is in the fixture set and is correctly hidden, because the public can only see published editions.</p>
+  </div></div>
+</section>
+
+<!-- =============== EDITION LANDING =============== -->
+<section class="view" data-view="edition" aria-label="Edition">
+  <div class="ed-cover on-purple">
+    <div class="wrap ed-cover-grid">
+      <div>
+        <h1 class="num"><small>SPRINGBOARD · 2026-Q2</small>Q2 ’26</h1>
+        <div class="facts"><span><b>April – June 2026</b>Quarter</span><span><b>Published</b>25 September 2026</span><span><b id="ed-count">0</b>Stories</span></div>
+      </div>
+      <div class="cvimg"><span class="ph" style="--a:#8c6be3;--b:#2a0870;--fx:65%;--fy:35%;--ang:120deg"><span class="tag">Edition cover · landscape 3:2 · publications.cover_media_id</span></span></div>
+    </div>
+  </div>
+  <div class="sec"><div class="wrap">
+    <div class="sec-head"><div><p class="kicker">Contents</p><h2>Sections</h2></div></div>
+    <ol class="chapters" id="chapters-2"></ol>
+  </div></div>
+  <div class="sec" style="padding-top:0"><div class="wrap">
+    <div class="sec-head"><div><p class="kicker">Everything in Q2 ’26</p><h2>All stories</h2></div></div>
+    <div class="filters" role="group" aria-label="Filter stories by area" id="filters"></div>
+    <div class="list" id="ed-list" aria-live="polite"></div>
+  </div></div>
+</section>
+
+<!-- =============== STORY =============== -->
+<section class="view" data-view="story" aria-label="Story">
+  <div id="story-hero"></div>
+  <article class="wrap">
+    <div class="prose">
+      <p>Sample body copy. The reading column holds about 65 characters per line. Paragraph spacing is set by the type scale, not by margins on individual blocks. Use the review panel to compare the body face: Syne, which is the current brand face, or Newsreader, a proposal that is not approved.</p>
+      <p>Images keep their native shape. A landscape photograph can break out wider than the text column. A portrait photograph stays inside the column with a height cap, so it never needs scrolling to see whole.</p>
+      <figure class="wide"><div class="pic rv rv-clip" style="--r:3/2"><span class="ph" style="--a:#c9b8f0;--b:#4b2a96;--fx:40%;--fy:45%"><span class="tag">Placeholder · inline landscape 3:2</span></span></div><figcaption><span>Caption from <code>media.caption</code>, shown only when set.</span><span class="credit">Photo: credit field (proposed)</span></figcaption></figure>
+      <h2>Block types keep their meaning</h2>
+      <p>Headings, quotes, statistics, callouts, galleries and video all render from the existing block document. Only their presentation changes.</p>
+      <blockquote class="pull">“A quote block gets display type and a pillar-coloured rule.”<cite>Attribution field</cite></blockquote>
+      <figure class="portrait"><div class="pic rv rv-clip" style="--r:4/5"><span class="ph" style="--a:#ffb3a8;--b:#6a2a6f;--fx:50%;--fy:25%"><span class="tag">Placeholder · inline portrait 4:5</span></span></div><figcaption><span>Portrait inline image: capped at 80% of the viewport height.</span></figcaption></figure>
+      <div class="yt"><span class="ph" style="--a:#5b3bb0;--b:#1c0848"><span class="tag">YouTube block · editor-chosen thumbnail</span></span><button type="button" aria-label="Play video: sample YouTube block"><span class="play"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#1A0B3B"/></svg></span></button></div>
+      <p style="font:500 .86rem/1.5 var(--ui);color:var(--muted-paper)">The existing click-to-play behaviour is kept: the youtube-nocookie iframe loads only after a click. This prototype cannot embed iframes, so the button does nothing here.</p>
+      <h2>Event and health-tip details</h2>
+      <div class="event" aria-label="Event details">
+        <div class="day">SEP<b>12</b>2026</div>
+        <dl><dt>When</dt><dd>Friday 12 September 2026, 9:00 – 17:00</dd><dt>Where</dt><dd>metadata.location</dd><dt>RSVP</dt><dd><a class="btn" href="#story" style="padding:.55rem .9rem">RSVP <span class="a">→</span></a></dd></dl>
+      </div>
+      <p class="source">Source: <code>metadata.source</code> with a link to <code>metadata.sourceUrl</code>. Health tips show this footnote automatically.</p>
+    </div>
+  </article>
+</section>
+
+<!-- =============== GALLERY =============== -->
+<section class="view" data-view="gallery" aria-label="Photos of the Quarter">
+  <div class="page-head on-purple" style="margin-top:-76px;padding-top:calc(76px + clamp(3rem,7vw,6rem))">
+    <div class="wrap">
+      <span class="ed-label"><span class="q">Q2 ’26</span><span class="pillar" style="background:var(--pillar-engage)">Photos of the Quarter</span></span>
+      <h1>Photos of the Quarter</h1>
+      <p>Every photograph keeps its own shape. Rows are justified by aspect ratio, and the photos are numbered in the editor’s order. Select a photo to open the viewer.</p>
+    </div>
+  </div>
+  <div class="sec"><div class="wrap"><div class="justified" id="justified"></div></div></div>
+</section>
+
+<!-- =============== ADMIN SKETCH =============== -->
+<section class="view" data-view="admin" data-header="solid" aria-label="Admin sketch">
+  <div class="adm" style="margin-top:0">
+    <div class="wrap">
+      <p class="note" style="margin:0 0 1.25rem">Admin sketch for review: how editions appear in the CMS. Same Server Actions, permissions and statuses as today. Fixture data only.</p>
+      <div class="adm-shell">
+        <nav class="adm-side" aria-label="Admin">
+          <div><h2>Publish</h2><ul><li><a href="#admin">Dashboard</a></li><li><a href="#admin" aria-current="page">Content</a></li><li><a href="#admin">Review queue</a></li><li><a href="#admin">Media</a></li></ul></div>
+          <div><h2>Organise</h2><ul><li><a href="#admin">Editions</a></li><li><a href="#admin">Sections</a></li><li><a href="#admin">Categories</a></li><li><a href="#admin">Navigation</a></li></ul></div>
+          <div><h2>People</h2><ul><li><a href="#admin">Contributors</a></li><li><a href="#admin">Staff</a></li></ul></div>
+        </nav>
+        <div>
+          <div class="adm-card">
+            <h1>Content</h1>
+            <div class="row" role="group" aria-label="Filter content">
+              <label class="f" for="af-ed">Edition<select id="af-ed"><option value="all">All editions</option><option value="2026-Q2" selected>Q2 ’26 · active</option><option value="2026-Q1">Q1 ’26</option><option value="evergreen">Evergreen</option><option value="none">Not assigned yet</option></select></label>
+              <label class="f" for="af-st">Status<select id="af-st"><option>All statuses</option><option>Draft</option><option>In review</option><option>Published</option></select></label>
+            </div>
+            <div class="tw"><table><thead><tr><th scope="col">Title</th><th scope="col">Edition</th><th scope="col">Section</th><th scope="col">Status</th></tr></thead>
+            <tbody id="adm-rows"></tbody></table></div>
+          </div>
+          <div class="adm-card">
+            <h2 style="font-size:1.25rem">Edition <span style="font:500 .85rem var(--ui);color:var(--muted-paper)">· part of the content form</span></h2>
+            <div class="scope" role="radiogroup" aria-label="Edition" id="scope">
+              <label><input type="radio" name="scope" value="active" checked><span><b>Q2 ’26 — active edition</b><small>Default for new content. Set by an admin in Settings, using the existing “default publication” field.</small></span></label>
+              <label><input type="radio" name="scope" value="other"><span><b>Another edition</b><small>Choose from published and draft editions, newest first.</small> <select id="ed-other" aria-label="Choose edition" style="margin-top:.4rem;min-width:0"><option>Q3 ’26 (draft)</option><option>Q1 ’26</option><option>Q4 ’25</option></select></span></label>
+              <label><input type="radio" name="scope" value="evergreen"><span><b>Evergreen</b><small>Not part of any edition, for example an HR policy. This must be chosen explicitly.</small></span></label>
+              <label><input type="radio" name="scope" value="none"><span><b>Not decided yet</b><small>Fine while drafting. The item cannot be submitted for review until an edition or Evergreen is chosen.</small></span></label>
+            </div>
+            <div class="row"><label class="f" for="sec">Section (only sections in the chosen edition)<select id="sec"><option>Company News</option><option>People &amp; Culture</option></select></label></div>
+            <div class="row"><button class="btn" type="button" id="submit-review">Submit for review</button></div>
+            <div id="scope-msg" role="status" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid" id="foot-grid">
+      <div><h2 class="fh">Springboard</h2><p style="color:var(--muted-purple);max-width:22rem;font-size:.95rem">Springboard is PHD Nigeria’s editorial platform: insights, people, and stories from across the agency.</p></div>
+    </div>
+    <p class="foot-big" aria-hidden="true">SPRINGBOARD</p>
+    <div class="foot-small"><span>© 2026 PHD Nigeria. Springboard.</span><span><a href="#editions" data-route style="color:inherit">All editions</a></span></div>
+  </div>
+</footer>
+
+<div class="curtain" id="curtain" aria-hidden="true"><span>SPRINGBOARD</span></div>
+
+<dialog class="lb" id="lb" aria-label="Photo viewer">
+  <div class="lb-inner">
+    <div class="lb-top"><span id="lb-count">001 / 012</span><button class="lb-btn" type="button" id="lb-close">Close</button></div>
+    <div class="lb-stage"><div class="lb-pic" id="lb-pic"></div></div>
+    <div class="lb-bottom"><p id="lb-cap"></p><span style="display:flex;gap:.5rem"><button class="lb-btn" type="button" id="lb-prev" aria-label="Previous photo">←</button><button class="lb-btn" type="button" id="lb-next" aria-label="Next photo">→</button></span></div>
+  </div>
+</dialog>
+
+<aside class="review" id="review" aria-label="Prototype controls">
+  <button type="button" aria-expanded="false" aria-controls="review-box" id="review-btn">Prototype controls</button>
+  <div class="box" id="review-box" hidden>
+    <label>Body face<select id="rv-face"><option value="syne">Syne (current brand)</option><option value="read">Newsreader (proposal)</option></select></label>
+    <label>Reduced motion<select id="rv-rm"><option value="os">Follow device</option><option value="on">Simulate on</option></select></label>
+    <label>Placeholder labels<select id="rv-tags"><option value="show">Show</option><option value="hide">Hide</option></select></label>
+    <p class="hint">Views: <a href="#home">Home</a> · <a href="#editions">Editions</a> · <a href="#edition">Edition</a> · <a href="#story">Story</a> · <a href="#gallery">Gallery</a> · <a href="#admin">Admin sketch</a></p>
+    <p class="hint">All photographs are placeholders. No CMS media was available to this prototype.</p>
+  </div>
+</aside>
+
+<script>
+(function(){
+  const root = document.documentElement; root.classList.add('js');
+  const $ = (s, c=document) => c.querySelector(s);
+  const $$ = (s, c=document) => [...c.querySelectorAll(s)];
+  const mqRM = matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => mqRM.matches || root.classList.contains('rm');
+
+  /* ---------- Fixtures ---------- */
+  // Mirrors nav_items as seeded by 20260924000000_nav_hierarchy_and_editorial_categories.sql
+  const NAV = [
+    {label:'People & Culture', sw:'var(--pillar-people)', children:[['HR Corner','/hr-corner'],['Staff Spotlight','/staff-spotlight'],['Staff News','/staff-news'],['Healthline','/healthline']]},
+    {label:'Company & Business', sw:'var(--pillar-company)', children:[['Company News','/company-news'],['Articles','/articles']]},
+    {label:'Engagement & Community', sw:'var(--pillar-engage)', children:[['Photos of the Quarter','/photos-of-the-quarter'],['Games','/games']]},
+    {label:'Search', href:'/search'}
+  ];
+  // Publication records → edition cards. Only 2026-Q2 is real; others are fictional fixtures.
+  const EDITIONS = [
+    {code:'2026-Q3', status:'draft', range:'July – September 2026', tone:['#9c86e8','#2c0b70']},
+    {code:'2026-Q2', status:'published', range:'April – June 2026', published:'2026-09-25', sections:4, tone:['#7d5bd6','#2b0a6e'], real:true},
+    {code:'2026-Q1', status:'published', range:'January – March 2026', published:'2026-04-10', sections:4, tone:['#e78c8c','#4b0f5e'], fixture:true},
+    {code:'2025-Q4', status:'published', range:'October – December 2025', published:'2026-01-15', sections:3, tone:['#a6d96a','#1f3a4f'], fixture:true},
+    {code:'2025-Q3', status:'published', range:'July – September 2025', published:'2025-10-08', sections:3, tone:['#f0a3e8','#3d0d6b'], fixture:true}
+  ];
+  const short = c => { const [y,q] = c.split('-'); return `${q} ’${y.slice(2)}`; };
+  // Company News titles are the real Q2 '26 headlines observed on production; everything else is placeholder.
+  const STORIES = [
+    {t:'VST 2026: Aligning for the Future', p:'company', cat:'Company News', r:'3/2', tone:['#9a83e0','#2b0b6a'], real:true},
+    {t:'PHD Nigeria Wins Media Agency of the Year for the Third Consecutive Year', p:'company', cat:'Company News', r:'4/5', tone:['#c9a6ff','#3a0f7a'], real:true},
+    {t:'PHD Nigeria Shines at the OMGWCA Creative Exchange Program', p:'company', cat:'Company News', r:'1/1', tone:['#ff9c9c','#4a1468'], real:true},
+    {t:'PHD Aerobics: Outpace 2.0', p:'company', cat:'Company News', r:'16/9', tone:['#b5ec7a','#22406a'], real:true},
+    {t:'Staff Spotlight placeholder', p:'people', cat:'Staff Spotlight', r:'4/5', tone:['#ffb8a8','#5a1d6d']},
+    {t:'HR Corner placeholder', p:'people', cat:'HR Corner', r:'3/2', tone:['#f2c6c6','#3f1a66']},
+    {t:'Healthline placeholder', p:'people', cat:'Healthline', r:'3/2', tone:['#ffc0b3','#2e1060']},
+    {t:'Photos of the Quarter', p:'engage', cat:'Photos of the Quarter', r:'3/2', tone:['#c8f59a','#2a2a6a'], gallery:true},
+    {t:'Games placeholder', p:'engage', cat:'Games', r:'1/1', tone:['#d6f7ae','#3a1572']}
+  ];
+  const PILLAR = {people:['People & Culture','var(--pillar-people)'], company:['Company & Business','var(--pillar-company)'], engage:['Engagement & Community','var(--pillar-engage)']};
+  // Ribbon frames: deliberate variation in ratio, scale and vertical placement.
+  const FRAMES = [
+    ['3/2','','Company News','Retreat, wide group','#8f78d9','#2a0b66','30%','40%'],
+    ['4/5','s-md','Staff Spotlight','Portrait, single subject','#f0a99c','#4a1366','50%','22%'],
+    ['1/1','s-sm','Engagement','Detail, hands / objects','#b9e88a','#1f3b5e','60%','60%'],
+    ['16/9','','Company News','Stage, award moment','#c7b2ff','#33107a','70%','30%'],
+    ['3/4','s-lo','People & Culture','Candid, two people','#ffb6e9','#43105e','40%','30%'],
+    ['3/2','s-md','Photos of the Quarter','Office life, mid-shot','#a99ae6','#1e0a55','25%','55%'],
+    ['2/3','','Healthline','Movement, vertical','#ff9d9d','#3b0d61','55%','20%'],
+    ['5/4','s-sm','Company News','Client meeting, table','#d6c9f7','#2c0b6c','35%','50%'],
+    ['4/5','s-md','Staff News','Celebration, cake / candles','#ff9ff3','#4c0f6b','50%','35%'],
+    ['16/9','s-lo','Engagement','Aerobics, wide action','#c3f08f','#24345f','65%','45%']
+  ];
+
+  /* Headline: split into words for a restrained staggered rise (text stays real, selectable and readable without JS) */
+  $$('[data-words]').forEach(h => {
+    let i = 0;
+    const wrapWords = node => [...node.childNodes].forEach(n => {
+      if (n.nodeType === 3) { const f = document.createDocumentFragment(); n.textContent.split(/(\s+)/).forEach(t => { if (!t) return; if (/^\s+$/.test(t)) { f.append(t); return; } const w = document.createElement('span'); w.className = 'w'; const inner = document.createElement('span'); inner.style.setProperty('--i', i++); inner.textContent = t; w.append(inner); f.append(w); }); n.replaceWith(f); }
+      else if (n.nodeType === 1) wrapWords(n);
+    });
+    wrapWords(h);
+  });
+
+  /* ---------- Render helpers ---------- */
+  const ph = (a,b,tag,fx='35%',fy='35%') => `<span class="ph" style="--a:${a};--b:${b};--fx:${fx};--fy:${fy}">${tag?`<span class="tag">${tag}</span>`:''}</span>`;
+  const chev = '<svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+  const label = (s) => `<span class="ed-label"><span class="q">Q2 ’26</span><span class="pillar" style="background:${PILLAR[s.p][1]}">${s.cat}</span></span>`;
+  const routeFor = s => s.gallery ? '#gallery' : '#story';
+
+  // Desktop nav (disclosure pattern: button + list; Esc closes and returns focus)
+  $('#nav-list').innerHTML = NAV.map((g,i) => g.children ? `
+    <li class="nav-item"><button class="nav-trigger" type="button" aria-expanded="false" aria-controls="p${i}">${g.label}${chev}</button>
+      <div class="panel" id="p${i}"><ul style="list-style:none;margin:0;padding:0">${g.children.map(([l,h]) => `<li><a href="#home" data-route data-href="${h}"><span class="l"><span class="sw" style="--sw:${g.sw}"></span>${l}</span><span class="arr">→</span></a></li>`).join('')}</ul></div></li>` :
+    `<li><a class="nav-link" href="#home" data-route data-href="${g.href}">${g.label}</a></li>`).join('');
+  $('#drawer-list').innerHTML = NAV.map((g,i) => g.children ? `
+    <li><button class="acc" type="button" aria-expanded="false" aria-controls="m${i}">${g.label}${chev}</button>
+    <div class="acc-panel" id="m${i}"><div>${g.children.map(([l,h]) => `<a href="#home" data-route data-href="${h}" style="--sw:${g.sw}">${l}</a>`).join('')}</div></div></li>` :
+    `<li><a class="solo" href="#home" data-route data-href="${g.href}">${g.label}</a></li>`).join('');
+  // Footer columns from the same nav data
+  $('#foot-grid').insertAdjacentHTML('beforeend', NAV.filter(g=>g.children).map(g => `<div><h2 class="fh">${g.label}</h2><ul>${g.children.map(([l,h])=>`<li><a href="#home" data-route data-href="${h}">${l}</a></li>`).join('')}</ul></div>`).join(''));
+
+  // Ribbon set (the duplicate set is cloned in JS; without JS the CSS loop still runs on one set + a server-rendered clone in the real build)
+  $('#set-a').innerHTML = FRAMES.map(([r,s,k,subj,a,b,fx,fy]) => `<li class="frame ${s}" style="--r:${r}"><figure style="margin:0;height:100%"><span class="img">${ph(a,b,`Placeholder · ${r.replace('/',':')} · ${subj}`,fx,fy)}</span><figcaption><b>${k}</b>Q2 ’26</figcaption></figure></li>`).join('');
+  const clone = $('#set-a').cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('aria-hidden','true'); $$('a,button',clone).forEach(n=>n.tabIndex=-1);
+  $('#track').appendChild(clone);
+
+  // Chapters
+  const chapterHTML = () => Object.entries(PILLAR).map(([k,[name,col]],i) => {
+    const items = STORIES.filter(s=>s.p===k);
+    const first = items[0];
+    return `<li class="chapter rv" style="--sw:${col}"><span class="no">0${i+1}</span><div><h3>${name}</h3><ul>${items.map(s=>`<li><a href="${routeFor(s)}" data-route data-orient="${s.r==='4/5'?'portrait':'landscape'}">${s.t}</a></li>`).join('')}</ul></div><a class="thumb" href="${routeFor(first)}" data-route tabindex="-1" aria-hidden="true">${ph(first.tone[0],first.tone[1],`Section image · ${first.cat}`)}</a></li>`;
+  }).join('');
+  $('#chapters').innerHTML = chapterHTML();
+  $('#chapters-2').innerHTML = chapterHTML();
+
+  // Company band: deliberate asymmetric grid, native ratios respected
+  const cs = STORIES.filter(s=>s.cat==='Company News');
+  const spans = ['c-7','c-5','c-4','c-4'];
+  $('#company-stories').innerHTML = cs.map((s,i) => `<a class="story rv ${spans[i]||'c-4'}" href="#story" data-route data-orient="${s.r==='4/5'?'portrait':'landscape'}"><span class="pic rv-clip rv" style="--r:${i<2?(i===1?'4/5':'3/2'):s.r}">${ph(s.tone[0],s.tone[1],`Cover · ${(i<2?(i===1?'4/5':'3/2'):s.r).replace('/',':')}`)}</span><span class="ed-label"><span class="q">Q2 ’26</span><span class="pillar" style="background:var(--pillar-company)">Company News</span></span><h3>${s.t}</h3><span class="date">25 September 2026</span></a>`).join('');
+  $('#company-stories').insertAdjacentHTML('beforeend', `<p class="c-4" style="align-self:end;color:var(--muted-purple);font-size:.9rem">These titles are real Q2 ’26 headlines from production. Images and layout are placeholders.</p>`);
+
+  // Celebrations (placeholder names)
+  $('#celebrate').innerHTML = Array.from({length:8},(_,i)=>`<li><span class="av">${ph(['#ffb3ec','#ff9c9c','#c6b4ff','#bdf08a'][i%4],'#3a0f70','',`${40+i*5}%`,'30%')}</span><b>Celebrant name</b><span>${['14','19','22','27','3','9','15','28'][i]} ${i<4?'May':'June'}</span></li>`).join('');
+
+  // Editions archive: generated from records, published only, newest first
+  const pub = EDITIONS.filter(e=>e.status==='published').sort((a,b)=>b.code.localeCompare(a.code));
+  const latest = pub[0];
+  $('#ed-grid').innerHTML = pub.map(e => `<a class="ed-card rv" href="#edition" data-route><span class="cv">${ph(e.tone[0],e.tone[1],e.real?'Cover · real edition':'Fixture edition','55%','30%')}<span class="big"><small>${e.code}</small>${short(e.code)}</span>${e===latest?'<span class="latest-flag">Latest</span>':''}</span><h2 style="font-size:1.25rem">Springboard ${short(e.code)}</h2><p>${e.range} · ${e.sections} sections${e.fixture?' · fixture':''}</p></a>`).join('');
+  $$('[data-latest-short]').forEach(n=>n.textContent=short(latest.code));
+
+  // Edition list + filters
+  $('#ed-list').innerHTML = STORIES.map(s => `<a class="story" href="${routeFor(s)}" data-route data-p="${s.p}" data-orient="${s.r==='4/5'?'portrait':'landscape'}"><span class="pic" style="--r:4/3">${ph(s.tone[0],s.tone[1],'Card · 4:3 crop')}</span>${label(s)}<h3>${s.t}</h3><span class="date">25 September 2026</span></a>`).join('');
+  $('#ed-count').textContent = STORIES.length;
+  $('#filters').innerHTML = [['all','All'],...Object.entries(PILLAR).map(([k,[n]])=>[k,n])].map(([k,n],i)=>`<button class="chip" type="button" data-f="${k}" aria-pressed="${i===0}">${n}</button>`).join('');
+  $('#filters').addEventListener('click', e => { const b = e.target.closest('.chip'); if(!b) return; $$('.chip',$('#filters')).forEach(c=>c.setAttribute('aria-pressed', c===b)); $$('#ed-list .story').forEach(s=>s.hidden = b.dataset.f!=='all' && s.dataset.p!==b.dataset.f); });
+
+  // Gallery
+  const G = [['3/2','Retreat opening session'],['2/3','Portrait on the terrace'],['1/1','Team table'],['16/9','Aerobics warm-up'],['4/5','Award on stage'],['3/2','Breakout group'],['3/4','Candid laughter'],['16/9','Wide venue shot'],['1/1','Detail: name badges'],['4/5','Two colleagues'],['3/2','Closing photo'],['2/3','Stairwell portrait']];
+  const tones = [['#9a83e0','#2b0b6a'],['#ffb8a8','#5a1d6d'],['#c8f59a','#2a2a6a'],['#c7b2ff','#33107a'],['#ff9ff3','#4c0f6b'],['#a99ae6','#1e0a55']];
+  $('#justified').innerHTML = G.map(([r,c],i)=>`<button class="g-item" type="button" style="--r:${r}" data-i="${i}" aria-label="Open photo ${String(i+1).padStart(3,'0')}: ${c}">${ph(tones[i%6][0],tones[i%6][1],`Placeholder · ${r.replace('/',':')}`, `${30+i*4}%`,'35%')}<span class="n">${String(i+1).padStart(3,'0')}</span></button>`).join('');
+
+
+  /* ---------- Admin sketch ---------- */
+  const ADM = [
+    ['VST 2026: Aligning for the Future','2026-Q2','Company News','published'],
+    ['PHD Nigeria Wins Media Agency of the Year…','2026-Q2','Company News','published'],
+    ['Staff Spotlight placeholder','2026-Q2','People & Culture','review'],
+    ['Fixture: Q1 town hall recap','2026-Q1','Company News','published'],
+    ['Fixture: Leave policy explainer','evergreen','—','published'],
+    ['Fixture: Untitled draft','none','—','draft']
+  ];
+  const edName = c => c==='evergreen' ? 'Evergreen' : c==='none' ? 'Not assigned yet' : short(c);
+  function renderAdm(){ const f = $('#af-ed').value; $('#adm-rows').innerHTML = ADM.filter(r => f==='all' || r[1]===f).map(r => `<tr><td>${r[0]}</td><td>${edName(r[1])}</td><td>${r[2]}</td><td><span class="badge b-${r[3]==='published'?'pub':r[3]}">${r[3]==='review'?'In review':r[3][0].toUpperCase()+r[3].slice(1)}</span></td></tr>`).join('') || '<tr><td colspan="4">Nothing matches this filter.</td></tr>'; }
+  $('#af-ed').addEventListener('change', renderAdm); renderAdm();
+  $('#submit-review').addEventListener('click', () => { const v = $('input[name=scope]:checked').value; $('#scope-msg').innerHTML = v==='none' ? '<p class="err">Choose an edition, or mark this item Evergreen, before submitting it for review.</p>' : `<p class="okmsg">Submitted for review in ${v==='evergreen'?'Evergreen':v==='active'?'Q2 ’26':$('#ed-other').value}. (Sketch only: nothing is saved.)</p>`; });
+
+  /* ---------- Story hero (orientation-aware) ---------- */
+  let orient = 'landscape';
+  function renderStoryHero(){
+    const head = `${'<span class="ed-label"><span class="q">Q2 ’26</span><span class="pillar" style="background:var(--pillar-company)">Company News</span></span>'}<h1>VST 2026: Aligning for the Future</h1><p class="dek">Sample standfirst from <code>content.summary</code>, hidden when it is empty.</p><p class="meta"><span>25 September 2026</span><span aria-hidden="true">·</span><span>3 min read</span></p><div class="orient" role="group" aria-label="Preview cover orientation"><button type="button" data-o="landscape" aria-pressed="${orient==='landscape'}">Landscape cover</button><button type="button" data-o="portrait" aria-pressed="${orient==='portrait'}">Portrait cover</button></div>`;
+    $('#story-hero').innerHTML = orient==='landscape'
+      ? `<div class="st-land"><div class="st-hero-img scrim">${ph('#9a83e0','#2b0b6a','Cover · landscape → full-bleed','40%','35%')}</div><div class="wrap"><div class="st-title">${head}</div></div></div>`
+      : `<div class="st-port on-purple"><div class="text">${head}</div><div class="pic scrim">${ph('#c9a6ff','#3a0f7a','Cover · portrait → split, native 4:5','50%','25%')}</div></div>`;
+    $('#hdr').dataset.mode = 'overlay';
+  }
+  $('#story-hero').addEventListener('click', e => { const b = e.target.closest('[data-o]'); if(!b) return; orient = b.dataset.o; renderStoryHero(); $(`[data-o="${orient}"]`).focus(); });
+
+  /* ---------- Ribbon motion ---------- */
+  const ribbon = $('#ribbon'), track = $('#track'), ctl = $('#ribbon-ctl');
+  const SPEED = 38; // px per second: slow and editorial
+  function tuneRibbon(){
+    // Make one set an exact whole number of pixels so -50% lands on an identical raster (no sub-pixel seam).
+    const sets = $$('.set', track); sets.forEach(s => s.style.paddingRight = '');
+    const w = sets[0].getBoundingClientRect().width;
+    const pad = parseFloat(getComputedStyle(sets[0]).paddingRight) + (Math.ceil(w) - w);
+    sets.forEach(s => s.style.paddingRight = pad + 'px');
+    track.style.setProperty('--ribbon-dur', (Math.ceil(w) / SPEED).toFixed(2) + 's');
+  }
+  tuneRibbon(); addEventListener('resize', () => requestAnimationFrame(tuneRibbon));
+  // Pause when off-screen or the tab is hidden: no work when nobody can see it
+  new IntersectionObserver(([e]) => ribbon.classList.toggle('is-offscreen', !e.isIntersecting), {threshold:0}).observe(ribbon);
+  document.addEventListener('visibilitychange', () => ribbon.classList.toggle('is-offscreen', document.hidden));
+  // Ease to a slower speed on hover, without stopping
+  let rate = 1, target = 1, raf = 0;
+  function anim(){ return track.getAnimations ? track.getAnimations()[0] : null; }
+  function easeRate(){ rate += (target - rate) * 0.08; const a = anim(); if(a && a.updatePlaybackRate) a.updatePlaybackRate(rate); if(Math.abs(target-rate) > .005) raf = requestAnimationFrame(easeRate); else raf = 0; }
+  ribbon.addEventListener('pointerenter', () => { target = .3; if(!raf) raf = requestAnimationFrame(easeRate); });
+  ribbon.addEventListener('pointerleave', () => { target = 1; if(!raf) raf = requestAnimationFrame(easeRate); });
+  ctl.addEventListener('click', () => { const p = !ribbon.classList.contains('is-paused'); ribbon.classList.toggle('is-paused', p); ctl.setAttribute('aria-pressed', p); ctl.textContent = p ? 'Play motion' : 'Pause motion'; });
+
+  /* ---------- Header behaviour ---------- */
+  const hdr = $('#hdr');
+  const onScroll = () => hdr.classList.toggle('is-scrolled', scrollY > 24);
+  addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  /* ---------- Desktop dropdowns ---------- */
+  const triggers = $$('.nav-trigger');
+  let closeTimer;
+  function setOpen(btn, open){ btn.setAttribute('aria-expanded', open); $('#'+btn.getAttribute('aria-controls')).classList.toggle('open', open); }
+  function closeAll(except){ triggers.forEach(t => t!==except && setOpen(t,false)); }
+  triggers.forEach(btn => {
+    const item = btn.parentElement, panel = $('#'+btn.getAttribute('aria-controls'));
+    btn.addEventListener('click', () => { const o = btn.getAttribute('aria-expanded')!=='true'; closeAll(btn); setOpen(btn,o); });
+    btn.addEventListener('keydown', e => { if(e.key==='ArrowDown'){ e.preventDefault(); closeAll(btn); setOpen(btn,true); $('a',panel).focus(); } });
+    item.addEventListener('pointerenter', e => { if(e.pointerType!=='mouse') return; clearTimeout(closeTimer); closeAll(btn); setOpen(btn,true); });
+    item.addEventListener('pointerleave', e => { if(e.pointerType!=='mouse') return; closeTimer = setTimeout(()=>setOpen(btn,false), 160); });
+    panel.addEventListener('keydown', e => {
+      const links = $$('a',panel), i = links.indexOf(document.activeElement);
+      if(e.key==='ArrowDown'){ e.preventDefault(); links[(i+1)%links.length].focus(); }
+      if(e.key==='ArrowUp'){ e.preventDefault(); links[(i-1+links.length)%links.length].focus(); }
+    });
+    item.addEventListener('focusout', e => { if(!item.contains(e.relatedTarget)) setOpen(btn,false); });
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key!=='Escape') return;
+    const open = triggers.find(t=>t.getAttribute('aria-expanded')==='true');
+    if(open){ setOpen(open,false); open.focus(); }
+    if($('#drawer').classList.contains('open')) closeDrawer();
+  });
+  document.addEventListener('click', e => { if(!e.target.closest('.nav-item')) closeAll(); });
+
+  /* ---------- Mobile drawer ---------- */
+  const drawer = $('#drawer'), menuBtn = $('#menu-btn');
+  function openDrawer(){ drawer.classList.add('open'); menuBtn.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; setTimeout(()=>$('#drawer-close').focus(), 30); }
+  function closeDrawer(){ drawer.classList.remove('open'); menuBtn.setAttribute('aria-expanded','false'); document.body.style.overflow=''; menuBtn.focus(); }
+  menuBtn.addEventListener('click', openDrawer); $('#drawer-close').addEventListener('click', closeDrawer);
+  drawer.addEventListener('keydown', e => { if(e.key!=='Tab') return; const f = $$('button,a',drawer).filter(n=>n.offsetParent!==null); const first=f[0], last=f[f.length-1]; if(e.shiftKey && document.activeElement===first){e.preventDefault(); last.focus();} else if(!e.shiftKey && document.activeElement===last){e.preventDefault(); first.focus();} });
+  $$('.acc',drawer).forEach(b => b.addEventListener('click', () => { const o = b.getAttribute('aria-expanded')!=='true'; b.setAttribute('aria-expanded',o); $('#'+b.getAttribute('aria-controls')).classList.toggle('open',o); }));
+
+  /* ---------- Lightbox ---------- */
+  const lb = $('#lb'); let li = 0;
+  function showLb(i){ li = (i+G.length)%G.length; const [r,c] = G[li]; const p = $('#lb-pic'); p.style.setProperty('--r', r); p.innerHTML = ph(tones[li%6][0],tones[li%6][1],`Placeholder · ${r.replace('/',':')}`, `${30+li*4}%`,'35%'); p.style.animation='none'; p.offsetWidth; p.style.animation=''; $('#lb-count').textContent = `${String(li+1).padStart(3,'0')} / ${String(G.length).padStart(3,'0')}`; $('#lb-cap').textContent = `${c}. Caption and photographer credit come from the media record.`; }
+  let lbReturn = null;
+  $('#justified').addEventListener('click', e => { const b = e.target.closest('.g-item'); if(!b) return; lbReturn = b; showLb(+b.dataset.i); lb.showModal(); $('#lb-close').focus(); });
+  $('#lb-close').addEventListener('click', () => lb.close());
+  lb.addEventListener('close', () => lbReturn && lbReturn.focus());
+  $('#lb-prev').addEventListener('click', () => showLb(li-1)); $('#lb-next').addEventListener('click', () => showLb(li+1));
+  lb.addEventListener('keydown', e => { if(e.key==='ArrowLeft') showLb(li-1); if(e.key==='ArrowRight') showLb(li+1); });
+
+  /* ---------- Scroll reveals (resting state visible) ---------- */
+  const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ e.target.classList.remove('pre'); io.unobserve(e.target); } }), {rootMargin:'0px 0px -8% 0px'});
+  function armReveals(scope){ if(reduced()) return; $$('.rv',scope).forEach(el => { const r = el.getBoundingClientRect(); if(r.top > innerHeight){ el.classList.add('pre'); io.observe(el); } }); }
+
+  /* ---------- Routing + page transition ---------- */
+  const views = $$('.view');
+  const ROUTES = ['home','editions','edition','story','gallery','admin'];
+  function show(name, initial){
+    views.forEach(v => v.classList.toggle('active', v.dataset.view===name));
+    const vEl = $(`.view[data-view="${name}"]`);
+    // Overlay only where the page opens on purple or on a scrimmed photo; light-topped pages get the solid bar.
+    hdr.dataset.mode = vEl.dataset.header || 'overlay';
+    if(name==='story') renderStoryHero();
+    scrollTo(0,0); onScroll();
+    const v = $(`.view[data-view="${name}"]`); armReveals(v);
+    if(!initial){ const h = $('h1', v); if(h){ h.tabIndex=-1; h.focus({preventScroll:true}); } }
+  }
+  let current = null;
+  function go(){
+    const name = ROUTES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
+    if(name===current) return;
+    const first = current===null; current = name;
+    closeAll(); if(drawer.classList.contains('open')) { drawer.classList.remove('open'); document.body.style.overflow=''; menuBtn.setAttribute('aria-expanded','false'); }
+    if(first || reduced()){ show(name, first); return; }
+    const c = $('#curtain'); c.classList.remove('leave'); c.classList.add('cover');
+    setTimeout(() => { show(name); c.classList.remove('cover'); c.classList.add('leave'); setTimeout(()=>c.classList.remove('leave'), 600); }, 420);
+  }
+  document.addEventListener('click', e => { const a = e.target.closest('a[data-route]'); if(!a) return; if(a.dataset.orient) orient = a.dataset.orient; });
+  addEventListener('hashchange', go); go();
+
+  /* ---------- Review controls ---------- */
+  const rb = $('#review-btn'), box = $('#review-box');
+  rb.addEventListener('click', () => { box.hidden = !box.hidden; rb.setAttribute('aria-expanded', !box.hidden); });
+  $('#rv-face').addEventListener('change', e => root.classList.toggle('read-face', e.target.value==='read'));
+  $('#rv-rm').addEventListener('change', e => root.classList.toggle('rm', e.target.value==='on'));
+  $('#rv-tags').addEventListener('change', e => root.classList.toggle('hide-tags', e.target.value==='hide'));
+  try { const f = localStorage.getItem('sb-face'); if(f==='read'){ root.classList.add('read-face'); $('#rv-face').value='read'; } $('#rv-face').addEventListener('change', e => { try{ localStorage.setItem('sb-face', e.target.value); }catch(_){} }); } catch(_){}
+})();
+</script>
