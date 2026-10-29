@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import type { Content, Author } from "@/content-types/types";
 import { safeParseBodyDocument, createEmptyBodyDocument } from "@/content-types/blocks";
-import { getPublicUrl } from "@/lib/storage/buckets";
+import { getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
+import { getAdminSession } from "@/lib/auth/session";
 
 type ContentRow = Database["public"]["Tables"]["content"]["Row"];
 type PublicationRow = Database["public"]["Tables"]["publications"]["Row"];
@@ -216,7 +217,29 @@ export async function getContentByIdForPreview(id: string): Promise<Content | nu
     .returns<RichContentRow | null>();
 
   if (error) throw error;
-  return data ? mapRichContentRow(supabase, data) : null;
+  if (!data) return null;
+
+  const content = mapRichContentRow(supabase, data);
+
+  // Staff-only: show a PRIVATE cover through a short-lived signed URL, so a draft can be reviewed as it will look
+  // without promoting its pictures. Requires a signed-in contributor-or-above (and Storage's own
+  // media_private_read policy re-checks at signing time). Nothing is stored; the URL exists only in this response.
+  const session = await getAdminSession();
+  if (!session) return content;
+  content.isStaffPreview = true;
+  if (data.content_cover_media?.bucket === "private") {
+    try {
+      content.coverImageUrl = await getSignedPrivateUrl(
+        supabase,
+        data.content_cover_media.storage_path,
+        PRIVATE_PREVIEW_URL_TTL_SECONDS
+      );
+    } catch (signError) {
+      // Message only — never the path or URL.
+      console.error("preview: could not sign the private cover image:", signError instanceof Error ? signError.message : "unknown error");
+    }
+  }
+  return content;
 }
 
 /**

@@ -20,7 +20,7 @@ export async function ArticleTemplate({ content }: { content: Content }) {
   const supabase = await createClient();
 
   const [{ mediaMap, relatedContent }, sectionSiblings, related, moreByAuthor] = await Promise.all([
-    resolveBodyReferences(supabase, content.body),
+    resolveBodyReferences(supabase, content.body, { includePrivate: content.isStaffPreview === true }),
     content.sectionId ? getContentForSection(content.sectionId) : Promise.resolve([]),
     content.categoryId ? getRelatedContent(content.categoryId, content.id, 3) : Promise.resolve([]),
     content.authorId

@@ -18,7 +18,7 @@ export async function NewsTemplate({ content }: { content: Content }) {
   const supabase = await createClient();
 
   const [{ mediaMap, relatedContent }, moreNews] = await Promise.all([
-    resolveBodyReferences(supabase, content.body),
+    resolveBodyReferences(supabase, content.body, { includePrivate: content.isStaffPreview === true }),
     getNewsBites(3, { excludeContentId: content.id }),
   ]);
 

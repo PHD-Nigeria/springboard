@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ImageBlock as ImageBlockData } from "@/content-types/blocks";
+import { isSignedStorageUrl } from "@/lib/storage/buckets";
 
 interface ResolvedMedia {
   url: string;
@@ -16,6 +17,7 @@ export function ImageBlock({ block, media }: { block: ImageBlockData; media?: Re
       <div className="relative overflow-hidden bg-surface">
         <Image
           src={media.url}
+          unoptimized={isSignedStorageUrl(media.url)}
           alt={block.alt ?? block.caption ?? ""}
           width={media.width ?? 1200}
           height={media.height ?? 800}

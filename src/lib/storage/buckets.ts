@@ -31,6 +31,18 @@ export async function getSignedPrivateUrl(
   return data.signedUrl;
 }
 
+/** Lifetime of the signed URLs the admin content preview uses to show private images to signed-in staff. */
+export const PRIVATE_PREVIEW_URL_TTL_SECONDS = 300;
+
+/**
+ * True for a Supabase Storage *signed* URL. next/image must not run these through its optimizer: they aren't
+ * covered by images.remotePatterns, and the optimizer would also keep a cached copy of a private image that
+ * outlives the token — so images with a signed URL are loaded by the browser straight from Storage instead.
+ */
+export function isSignedStorageUrl(url: string | null | undefined): boolean {
+  return typeof url === "string" && url.includes("/storage/v1/object/sign/");
+}
+
 /**
  * Public URL for a published media file. No signing needed — the bucket
  * itself is public.

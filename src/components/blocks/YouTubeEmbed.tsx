@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { youTubeEmbedUrl, youTubeWatchUrl } from "@/lib/video/youtube";
+import { isSignedStorageUrl } from "@/lib/storage/buckets";
 
 interface YouTubeEmbedProps {
   videoId: string;
@@ -60,6 +61,7 @@ export function YouTubeEmbed({ videoId, title, caption, orientation, thumbnail }
             {thumbnail ? (
               <Image
                 src={thumbnail.url}
+                unoptimized={isSignedStorageUrl(thumbnail.url)}
                 alt={thumbnail.alt ?? ""}
                 fill
                 sizes={portrait ? "360px" : "(min-width: 1024px) 672px, 100vw"}

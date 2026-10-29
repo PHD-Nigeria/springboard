@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { duration, easing } from "@/design-system/tokens/motion";
 import { getTaxonomyColorClass } from "@/design-system/tokens/colors";
 import { MediaFallback } from "@/components/editorial/MediaFallback";
+import { isSignedStorageUrl } from "@/lib/storage/buckets";
 
 interface HeroProps {
   title: string;
@@ -75,6 +76,7 @@ export function Hero({ title, subtitle, category, imageUrl, imageAlt, fallbackSe
           {imageUrl ? (
             <Image
               src={imageUrl}
+              unoptimized={isSignedStorageUrl(imageUrl)}
               alt={imageAlt ?? title}
               fill
               priority

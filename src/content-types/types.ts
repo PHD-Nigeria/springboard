@@ -71,6 +71,11 @@ export interface Content {
   category?: { name: string; slug: string } | null;
   author?: { name: string; slug: string } | null;
   coverImageUrl?: string | null;
+  /**
+   * Set ONLY by getContentByIdForPreview for a signed-in staff member (the admin content-preview route). It lets the
+   * templates resolve private-bucket images through short-lived signed URLs. Never set for public pages.
+   */
+  isStaffPreview?: boolean;
   /** Route to this content's detail page, built from its publication's slug. */
   href?: string;
 }

@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import type { Block, BodyDocument } from "@/content-types/blocks";
-import { getPublicUrl } from "@/lib/storage/buckets";
+import { getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
+import { getAdminSession } from "@/lib/auth/session";
 
 interface ResolvedMedia {
   url: string;
@@ -17,7 +18,7 @@ interface ResolvedRelatedContent {
   href: string;
 }
 
-function collectMediaIds(blocks: Block[]): string[] {
+export function collectMediaIds(blocks: Block[]): string[] {
   const ids = new Set<string>();
   for (const block of blocks) {
     if (block.type === "image") ids.add(block.mediaId);
@@ -58,10 +59,15 @@ interface RelatedContentRow {
  * into the `mediaMap`/`relatedContent` shape BlockRenderer already expects
  * (src/components/blocks/BlockRenderer.tsx) — one query per reference type,
  * not one per block, however many blocks there are.
+ *
+ * `options.includePrivate` is passed ONLY by the admin content preview (via Content.isStaffPreview). It lets
+ * private-bucket images resolve to short-lived signed URLs — and even then only if a signed-in staff session is
+ * confirmed again here, so no caller can obtain signed URLs by accident. Public pages never pass it.
  */
 export async function resolveBodyReferences(
   supabase: SupabaseClient<Database>,
-  body: BodyDocument
+  body: BodyDocument,
+  options: { includePrivate?: boolean } = {}
 ): Promise<{ mediaMap: Record<string, ResolvedMedia>; relatedContent: ResolvedRelatedContent[] }> {
   const mediaIds = collectMediaIds(body.blocks);
   const relatedIds = collectRelatedContentIds(body.blocks);
@@ -91,17 +97,36 @@ export async function resolveBodyReferences(
   // lib/content/queries.ts applies to cover/avatar images, so ImageBlock's
   // existing stale-reference handling (block.tsx: `if (!media) return
   // null`) covers this case too, instead of rendering a broken <img>.
+  // The one exception is the staff-only admin preview (options.includePrivate,
+  // re-checked against a live staff session below): private rows then get
+  // short-lived signed URLs instead of being skipped.
   const mediaMap: Record<string, ResolvedMedia> = {};
+  const toResolved = (row: MediaRow, url: string): ResolvedMedia => ({
+    url,
+    width: row.width ?? undefined,
+    height: row.height ?? undefined,
+    alt: row.alt_text ?? undefined,
+    caption: row.caption ?? undefined,
+  });
+  const canSignPrivate = options.includePrivate === true && (await getAdminSession()) !== null;
+  const privateRows: MediaRow[] = [];
   for (const row of mediaResult.data ?? []) {
-    if (row.bucket !== "public") continue;
-    mediaMap[row.id] = {
-      url: getPublicUrl(supabase, row.storage_path),
-      width: row.width ?? undefined,
-      height: row.height ?? undefined,
-      alt: row.alt_text ?? undefined,
-      caption: row.caption ?? undefined,
-    };
+    if (row.bucket !== "public") {
+      if (canSignPrivate) privateRows.push(row);
+      continue;
+    }
+    mediaMap[row.id] = toResolved(row, getPublicUrl(supabase, row.storage_path));
   }
+  await Promise.all(
+    privateRows.map(async (row) => {
+      try {
+        mediaMap[row.id] = toResolved(row, await getSignedPrivateUrl(supabase, row.storage_path, PRIVATE_PREVIEW_URL_TTL_SECONDS));
+      } catch (signError) {
+        // Skipped like any unreachable image; log the message only, never the path or URL.
+        console.error("preview: could not sign a private body image:", signError instanceof Error ? signError.message : "unknown error");
+      }
+    })
+  );
 
   const relatedContent: ResolvedRelatedContent[] = (relatedResult.data ?? []).map((row) => ({
     id: row.id,

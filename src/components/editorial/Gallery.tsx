@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { isSignedStorageUrl } from "@/lib/storage/buckets";
 
 interface GalleryImage {
   mediaId: string;
@@ -38,6 +39,7 @@ export function Gallery({ images }: { images: GalleryImage[] }) {
         <figure key={image.mediaId} className="mb-6 break-inside-avoid">
           <Image
             src={image.url}
+            unoptimized={isSignedStorageUrl(image.url)}
             alt={image.alt ?? ""}
             width={1200}
             height={900}
