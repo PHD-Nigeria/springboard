@@ -232,6 +232,130 @@ export async function searchMediaAction(query?: string, bucket?: "public" | "pri
   return listMedia(query, bucket);
 }
 
+export interface MediaDuplicateMatch {
+  id: string;
+  original_filename: string;
+  file_size_bytes: number | null;
+  bucket: "public" | "private";
+  created_at: string;
+  /** Same filename AND same byte size — a probable duplicate. False means only the filename matches. */
+  sameSize: boolean;
+}
+
+export interface FindMediaDuplicatesResult {
+  error: string | null;
+  /** One entry per input file, in the same order: the existing Media Library rows that share its filename (case-insensitive). */
+  matches: MediaDuplicateMatch[][];
+}
+
+const DUPLICATE_LOOKUP_MAX_FILES = 200;
+const DUPLICATE_LOOKUP_MAX_ROWS = 5000;
+
+/**
+ * Read-only lookup behind the batch importer's duplicate warnings. It never
+ * writes, never deletes, and never touches Storage. Matching is done here in
+ * application code rather than by interpolating filenames into a PostgREST
+ * filter — filenames can contain commas and parentheses, which that syntax
+ * treats as structure. Runs through the signed-in user's RLS-scoped client,
+ * so it can only ever see rows that user can already see in the Library.
+ */
+export async function findMediaDuplicatesAction(files: { name: string; size: number }[]): Promise<FindMediaDuplicatesResult> {
+  const session = await getAdminSession();
+  if (!session) return { error: "Your session has expired — sign in again.", matches: [] };
+  if (!Array.isArray(files) || files.length > DUPLICATE_LOOKUP_MAX_FILES) {
+    return { error: "Too many files to check at once.", matches: [] };
+  }
+  if (!files.every((file) => typeof file?.name === "string" && file.name.length <= 255 && Number.isFinite(file.size))) {
+    return { error: "Invalid file list.", matches: [] };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("media")
+    .select("id, original_filename, file_size_bytes, bucket, created_at")
+    .not("original_filename", "is", null)
+    .limit(DUPLICATE_LOOKUP_MAX_ROWS);
+  if (error) {
+    console.error("findMediaDuplicatesAction: lookup failed:", error.message);
+    return { error: "Couldn't check the Media Library for duplicates.", matches: [] };
+  }
+  if ((data?.length ?? 0) >= DUPLICATE_LOOKUP_MAX_ROWS) {
+    return { error: "The Media Library is too large to check for duplicates here.", matches: [] };
+  }
+
+  const byName = new Map<string, NonNullable<typeof data>>();
+  for (const row of data ?? []) {
+    const key = (row.original_filename ?? "").toLowerCase();
+    byName.set(key, [...(byName.get(key) ?? []), row]);
+  }
+
+  return {
+    error: null,
+    matches: files.map((file) =>
+      (byName.get(file.name.toLowerCase()) ?? []).map((row) => ({
+        id: row.id,
+        original_filename: row.original_filename ?? "",
+        file_size_bytes: row.file_size_bytes,
+        bucket: row.bucket,
+        created_at: row.created_at,
+        sameSize: row.file_size_bytes === file.size,
+      }))
+    ),
+  };
+}
+
+const PREVIEW_MAX_IDS = 100;
+const PREVIEW_TTL_SECONDS = 600;
+const UUID_PATTERN = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+/**
+ * Short-lived signed URLs so editors can see private images in the admin
+ * Media Library before anything is promoted. Authorisation happens twice,
+ * before any URL exists: the caller must be a signed-in staff member
+ * (contributor and above — the same rule that already lets them read the
+ * private bucket), and both the `media` lookup and Storage's own
+ * `createSignedUrls` run through that user's RLS-scoped client, so the
+ * `media_private_read` policy has the final say. Only rows whose bucket is
+ * actually 'private' are signed. The URLs live ten minutes, are returned
+ * only to this admin call, and are never written to a database, a page's
+ * server-rendered data, or anything a public route reads.
+ */
+export async function getPrivateMediaPreviewUrlsAction(ids: string[]): Promise<{ error: string | null; urls: Record<string, string> }> {
+  const session = await getAdminSession();
+  if (!session) return { error: "Your session has expired — sign in again.", urls: {} };
+  if (!Array.isArray(ids) || ids.length === 0) return { error: null, urls: {} };
+  if (ids.length > PREVIEW_MAX_IDS || !ids.every((id) => typeof id === "string" && UUID_PATTERN.test(id))) {
+    return { error: "Invalid preview request.", urls: {} };
+  }
+
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase.from("media").select("id, storage_path").eq("bucket", "private").in("id", ids);
+  if (error) {
+    console.error("getPrivateMediaPreviewUrlsAction: lookup failed:", error.message);
+    return { error: "Couldn't load previews.", urls: {} };
+  }
+  if (!rows || rows.length === 0) return { error: null, urls: {} };
+
+  const { data: signed, error: signError } = await supabase.storage
+    .from(STORAGE_BUCKETS.private)
+    .createSignedUrls(
+      rows.map((row) => row.storage_path),
+      PREVIEW_TTL_SECONDS
+    );
+  if (signError) {
+    console.error("getPrivateMediaPreviewUrlsAction: signing failed:", signError.message);
+    return { error: "Couldn't load previews.", urls: {} };
+  }
+
+  const idByPath = new Map(rows.map((row) => [row.storage_path, row.id]));
+  const urls: Record<string, string> = {};
+  for (const entry of signed ?? []) {
+    const id = entry.path ? idByPath.get(entry.path) : undefined;
+    if (id && entry.signedUrl && !entry.error) urls[id] = entry.signedUrl;
+  }
+  return { error: null, urls };
+}
+
 export async function updateMediaAction(
   id: string,
   fields: { alt_text?: string | null; caption?: string | null }

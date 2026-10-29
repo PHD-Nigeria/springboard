@@ -23,6 +23,7 @@ function collectMediaIds(blocks: Block[]): string[] {
     if (block.type === "image") ids.add(block.mediaId);
     if (block.type === "gallery") block.mediaIds.forEach((id) => ids.add(id));
     if (block.type === "video" && block.mediaId) ids.add(block.mediaId);
+    if (block.type === "video" && block.thumbnailMediaId) ids.add(block.thumbnailMediaId);
   }
   return [...ids];
 }

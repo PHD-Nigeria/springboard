@@ -126,6 +126,8 @@ exactly as if no image had been chosen at all.
   to 25MB per file.
 - **Uploads always start private.** This is deliberate — it gives an
   Admin a checkpoint before anything reaches the public site.
+  Private images still show a preview inside the admin (a short-lived,
+  signed-in-only link), so you can review them before they're promoted.
 - **Promoting and deleting are Admin-only**, everything else (uploading,
   selecting, editing alt text/caption, replacing) is open to every role.
 - **Deletion checks usage first.** You'll always see what's currently

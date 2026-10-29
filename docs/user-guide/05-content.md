@@ -93,6 +93,17 @@ or click **New content** to start a new piece.
    Callout, or Related content), click **Add block**, and fill it in.
    Use the up/down arrows on a block to reorder it, or **Remove** to
    delete it.
+
+   **Video blocks** use a YouTube link: paste a `youtube.com/watch`,
+   `youtube.com/shorts` or `youtu.be` link, add a **Title** (required — it
+   is the player's accessible label) and optionally a caption and a
+   thumbnail from the Media Library. **Check on YouTube** tells you whether
+   YouTube says the video can be embedded. A Shorts link switches the
+   player to vertical. Videos only appear on the site once the article is
+   published, and visitors press play before anything loads from YouTube.
+   Saving or publishing in Springboard does **not** change the video's
+   privacy on YouTube: public videos can be found on YouTube, and
+   unlisted ones can be watched by anyone with the link.
 6. Click **Save draft**.
 
 ![The "New content" form: Title, Slug, Subtitle, Content type, Summary, Author/Category/Publication/Section, and the empty block editor](images/13-admin-content-new.png)

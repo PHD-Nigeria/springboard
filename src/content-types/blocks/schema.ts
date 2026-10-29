@@ -43,16 +43,33 @@ export const statisticBlockSchema = z.object({
   description: z.string().optional(),
 });
 
-// Note: "must have mediaId or externalUrl" is a cross-field constraint that
+// Note: "must have mediaId, externalUrl or videoId" is a cross-field constraint that
 // can't be expressed with `.refine()` here without breaking discriminated
 // union member compatibility (refine wraps the schema in a ZodEffects, which
 // z.discriminatedUnion can't introspect for its literal key). Enforced
 // instead in `document.ts`'s `parseBodyDocument`.
+//
+// `videoId` is the current format: a validated 11-character YouTube id, with
+// the editorial metadata a reader needs (title for the accessible label,
+// optional caption, player orientation, optional thumbnail from the Media
+// Library). `mediaId` and `externalUrl` are LEGACY fields kept only so
+// documents saved before this change still parse — a body that fails
+// validation is rendered as empty (lib/content/queries.ts), so this schema
+// must never become stricter for them. New saves are normalised to `videoId`
+// and policed in saveContentAction instead (lib/video/normalize-video-blocks.ts).
 export const videoBlockSchema = z.object({
   type: z.literal("video"),
   mediaId: z.uuid().optional(),
   externalUrl: z.url().optional(),
   provider: z.string().optional(),
+  videoId: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{11}$/)
+    .optional(),
+  title: z.string().max(200).optional(),
+  caption: z.string().max(500).optional(),
+  orientation: z.enum(["landscape", "portrait"]).optional(),
+  thumbnailMediaId: z.uuid().optional(),
 });
 
 export const calloutBlockSchema = z.object({

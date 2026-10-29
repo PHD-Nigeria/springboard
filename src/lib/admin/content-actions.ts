@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { safeParseBodyDocument } from "@/content-types/blocks";
 import { CONTENT_TYPES, type ContentType } from "@/content-types/types";
 import { logAuditEvent } from "@/lib/admin/audit";
+import { normalizeVideoBlocks } from "@/lib/video/normalize-video-blocks";
 import type { Database } from "@/lib/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -118,6 +119,11 @@ export async function saveContentAction(_prevState: ContentFormState, formData: 
   if (!parsedBody.success) {
     return { error: "One or more blocks are incomplete — every block needs its required fields filled in." };
   }
+  // Server-side re-validation of every video block (YouTube-only, canonical id, title present) —
+  // the saved body is the normalised one, never whatever shape the browser sent.
+  const normalized = normalizeVideoBlocks(parsedBody.data);
+  if (normalized.error) return { error: normalized.error };
+  const bodyDocument = normalized.body;
 
   const publicationId = nullableString(formData, "publication_id");
   const sectionId = nullableString(formData, "section_id");
@@ -144,7 +150,7 @@ export async function saveContentAction(_prevState: ContentFormState, formData: 
     intent === "publish" ||
     intent === "schedule" ||
     (intent === "save-draft" && (currentStatus === "published" || currentStatus === "scheduled"));
-  if (mustStayPublishReady && parsedBody.data.blocks.length === 0) {
+  if (mustStayPublishReady && bodyDocument.blocks.length === 0) {
     return { error: "This content needs at least one block — it's published and must stay reader-ready." };
   }
   if (mustStayPublishReady && !publicationId) {
@@ -164,7 +170,7 @@ export async function saveContentAction(_prevState: ContentFormState, formData: 
     title,
     slug,
     content_type: contentType,
-    body: parsedBody.data,
+    body: bodyDocument,
     subtitle,
     summary,
     publication_id: publicationId,

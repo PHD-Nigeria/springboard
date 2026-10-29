@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
+import { useActionState, useState, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveContentAction, type ContentFormState, type ContentRevisionRow } from "@/lib/admin/content-actions";
 import { CONTENT_TYPES, CONTENT_TYPE_LABELS } from "@/content-types/types";
@@ -86,8 +86,34 @@ export function ContentForm({
 
   const availableSections = sections.filter((section) => !publicationId || section.publicationId === publicationId);
 
+  /**
+   * Submitted through onSubmit rather than `<form action={formAction}>` on purpose: React 19 resets every
+   * uncontrolled field in a form after its `action` finishes — including when the server returned an error — so
+   * a refused save (for example an incomplete block) wiped the title, slug, summary and selects of brand-new
+   * content. Dispatching the same server action ourselves, with the same FormData (including the clicked
+   * button's `intent`), keeps everything the editor typed and still shows `state.error`. The browser's own
+   * required/pattern validation still runs before onSubmit fires, and the server action is unchanged.
+   */
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending) return; // Enter pressed again while a save is in flight
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const formData = new FormData(event.currentTarget, submitter);
+    // Browsers that predate FormData's submitter argument (Safari < 16.4, Chrome/Edge < 112, Firefox < 111) silently
+    // drop it — the server would then see no `intent` and treat Publish/Submit for review/Unpublish as "save draft".
+    // So if a named button submitted the form and its field isn't there, add it ourselves.
+    if (
+      (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) &&
+      submitter.name &&
+      !formData.has(submitter.name)
+    ) {
+      formData.append(submitter.name, submitter.value);
+    }
+    startTransition(() => formAction(formData));
+  }
+
   return (
-    <form action={formAction} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8">
       {content && <input type="hidden" name="id" value={content.id} />}
       {content && <input type="hidden" name="current_status" value={content.status} />}
       <input type="hidden" name="cover_media_id" value={coverMedia?.id ?? ""} />

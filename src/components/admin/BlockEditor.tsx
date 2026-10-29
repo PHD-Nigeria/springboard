@@ -6,6 +6,7 @@ import type { Block, BlockType } from "@/content-types/blocks";
 import { AdminButton, AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/ui";
 import { MediaPicker } from "@/components/admin/MediaPicker";
 import { ContentPicker } from "@/components/admin/ContentPicker";
+import { VideoBlockFields } from "@/components/admin/VideoBlockFields";
 import type { AdminMediaRow } from "@/lib/admin/queries";
 
 const BLOCK_LABELS: Record<BlockType, string> = {
@@ -35,7 +36,7 @@ function createDefaultBlock(type: BlockType): Block {
     case "statistic":
       return { type: "statistic", value: "", label: "", description: "" };
     case "video":
-      return { type: "video", externalUrl: "", provider: "" };
+      return { type: "video", provider: "youtube", orientation: "landscape" };
     case "callout":
       return { type: "callout", style: "info", text: "" };
     case "related-content":
@@ -300,23 +301,7 @@ function BlockFields({
       );
 
     case "video":
-      return (
-        <div className="space-y-3">
-          <AdminInput
-            placeholder="External video URL (YouTube, Vimeo, ...)"
-            value={block.externalUrl ?? ""}
-            onChange={(e) => onChange({ ...block, externalUrl: e.target.value || undefined })}
-          />
-          <AdminInput
-            placeholder="Provider (optional, e.g. youtube)"
-            value={block.provider ?? ""}
-            onChange={(e) => onChange({ ...block, provider: e.target.value || undefined })}
-          />
-          <p className="font-body text-xs text-foreground-muted">
-            Uploaded video media isn&rsquo;t supported in this editor yet — use an external URL.
-          </p>
-        </div>
-      );
+      return <VideoBlockFields block={block} onChange={onChange} mediaById={mediaById} onMediaResolved={onMediaResolved} />;
 
     case "related-content":
       return (

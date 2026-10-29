@@ -605,6 +605,52 @@ plain `onClick` handler that builds `FormData` manually rather than relying
 on native form submission, matching how `promoteMediaAction`/`replaceMediaAction`
 are already invoked from plain buttons elsewhere in the same component.
 
+### YouTube video blocks, private previews & the temporary batch importer (2026-10)
+
+**Video = a YouTube id inside `content.body`.** No table, no migration. The
+`video` block now stores `provider: "youtube"`, a validated 11-character
+`videoId`, `title` (required — it is the player's accessible label), optional
+`caption`, `orientation` (`landscape` | `portrait`, for Shorts) and an optional
+`thumbnailMediaId`. Because the video lives in the content row, it inherits that
+row's RLS exactly: a draft, review, archived or future-scheduled video is
+invisible to the public site, the sitemap, public search and the anonymous REST
+API, and a published item inside an unpublished publication is not served (the
+public route resolves the publication first). Springboard status never changes a
+video's privacy *on YouTube*.
+
+- `src/lib/video/youtube.ts` is the single parser/URL-builder (https only, exact
+  hostnames, `watch`/`shorts`/`embed`/`live`/`youtu.be`, id regex). Only the id is
+  stored; every embed/watch URL is rebuilt from it against a fixed host.
+  `npm run test:youtube` exercises it (no test dependency; Node strips the types).
+- **Write path is strict, read path is lenient.** `saveContentAction` re-validates
+  every save on the server (`lib/video/normalize-video-blocks.ts`): non-YouTube
+  links, uploaded-video blocks and missing titles are refused, and accepted blocks
+  are normalised to the canonical shape. The zod *read* schema must not get
+  stricter for legacy fields, because a body that fails validation renders as an
+  empty document (`lib/content/queries.ts`). Legacy `externalUrl`s that are
+  YouTube links render as the new player; any other legacy URL renders nothing
+  (it used to be handed to `<video src>`); a legacy public `mediaId` still renders
+  a native `<video>`.
+- **Player** (`YouTubeEmbed`): click-to-play facade, nothing requested from
+  YouTube until the visitor presses play, then a `youtube-nocookie.com` iframe
+  (title, sandbox, strict referrer policy) plus a "Watch on YouTube" fallback link.
+  The thumbnail is an editor-chosen public Media Library image, never YouTube's.
+- `checkYouTubeVideoAction` (signed-in staff) asks YouTube's oEmbed endpoint
+  whether a video is embeddable. Fixed host, URL rebuilt from the validated id,
+  redirects refused. Advisory only; it never writes.
+
+**Private previews.** `getPrivateMediaPreviewUrlsAction` returns 10-minute signed
+URLs for private images to signed-in staff only (session check, then the caller's
+own RLS-scoped `media` lookup and `media_private_read`). They are held in browser
+memory by `MediaLibrary` and are never stored or part of any public page data.
+
+**Temporary batch importer.** `/admin/media/batch-import` (admin only; delete the
+route and `MediaBatchImport.tsx` after the initial import) drives the existing
+`uploadMediaDirect()` per file into the private bucket, with duplicate warnings
+(`findMediaDuplicatesAction`, filename + size), sequential progress, safe retry
+(re-checks the Library for an earlier success first) and a CSV report. Promotion
+stays per-image and explicit.
+
 ### People, Taxonomy & Editorial Administration (Phase 4C, 2026-08-15)
 
 Closes the remaining gaps that would have required direct database access:

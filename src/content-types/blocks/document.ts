@@ -10,11 +10,11 @@ export const bodyDocumentSchema = z
   })
   .superRefine((doc, ctx) => {
     doc.blocks.forEach((block, index) => {
-      if (block.type === "video" && !block.mediaId && !block.externalUrl) {
+      if (block.type === "video" && !block.mediaId && !block.externalUrl && !block.videoId) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["blocks", index],
-          message: "A video block needs either mediaId or externalUrl",
+          message: "A video block needs a YouTube video (or, for older content, a mediaId or externalUrl)",
         });
       }
     });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   searchMediaAction,
@@ -9,6 +9,7 @@ import {
   promoteMediaAction,
   replaceMediaAction,
   getMediaUsageAction,
+  getPrivateMediaPreviewUrlsAction,
   type MediaUsageRow,
 } from "@/lib/admin/media-actions";
 import { uploadMediaDirect, isRetryableMediaUploadError, type MediaUploadStage } from "@/lib/admin/media-upload-client";
@@ -50,6 +51,44 @@ export function MediaLibrary({ initialMedia }: { initialMedia: AdminMediaRow[] }
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Short-lived signed URLs for private items (id -> URL), fetched through an
+  // authorised server action. Held in memory only — never saved or sent anywhere else.
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const previewRetried = useRef<Set<string>>(new Set());
+
+  async function loadPreviews(ids: string[]) {
+    for (let start = 0; start < ids.length; start += 100) {
+      const result = await getPrivateMediaPreviewUrlsAction(ids.slice(start, start + 100));
+      if (Object.keys(result.urls).length > 0) setPreviews((prev) => ({ ...prev, ...result.urls }));
+    }
+  }
+
+  useEffect(() => {
+    const missing = media.filter((item) => item.bucket === "private" && !previews[item.id]).map((item) => item.id);
+    if (missing.length === 0) return;
+    // Mark as tried so a row that can't be previewed (e.g. missing object) isn't re-requested on every render.
+    const fresh = missing.filter((id) => !previewRetried.current.has(id));
+    if (fresh.length === 0) return;
+    fresh.forEach((id) => previewRetried.current.add(id));
+    void loadPreviews(fresh);
+  }, [media, previews]);
+
+  /**
+   * A preview failed to load — most likely its signed URL expired while the page stayed open. Drop it and ask for
+   * one fresh URL. A second failure for the same image (e.g. the object is genuinely missing) gives up and shows
+   * the "private" placeholder instead of looping.
+   */
+  const previewFailures = useRef<Set<string>>(new Set());
+  function refreshPreview(id: string) {
+    setPreviews((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    if (previewFailures.current.has(id)) return; // already retried once: stay on the placeholder
+    previewFailures.current.add(id);
+    previewRetried.current.delete(id);
+  }
 
   function refetch(nextQuery: string, nextBucket: "" | "public" | "private") {
     startTransition(async () => {
@@ -209,6 +248,17 @@ export function MediaLibrary({ initialMedia }: { initialMedia: AdminMediaRow[] }
             <div className="relative aspect-square overflow-hidden bg-background">
               {item.url ? (
                 <Image src={item.url} alt={item.alt_text ?? ""} fill sizes="180px" className="object-cover" />
+              ) : previews[item.id] ? (
+                // Signed private-bucket URL: not eligible for next/image's optimizer (public-bucket paths only), so a plain <img>.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={previews[item.id]}
+                  alt={item.alt_text ?? ""}
+                  loading="lazy"
+                  decoding="async"
+                  onError={() => refreshPreview(item.id)}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <div className="flex h-full w-full items-center justify-center font-body text-xs text-foreground-muted">
                   private
@@ -231,6 +281,8 @@ export function MediaLibrary({ initialMedia }: { initialMedia: AdminMediaRow[] }
       {selected && (
         <MediaDetailPanel
           item={selected}
+          previewUrl={previews[selected.id] ?? null}
+          onPreviewError={() => refreshPreview(selected.id)}
           onClose={() => {
             setSelected(null);
             setActionError(null);
@@ -249,6 +301,8 @@ export function MediaLibrary({ initialMedia }: { initialMedia: AdminMediaRow[] }
 
 function MediaDetailPanel({
   item,
+  previewUrl,
+  onPreviewError,
   onClose,
   onSave,
   onDelete,
@@ -258,6 +312,8 @@ function MediaDetailPanel({
   error,
 }: {
   item: AdminMediaRow;
+  previewUrl: string | null;
+  onPreviewError: () => void;
   onClose: () => void;
   onSave: (id: string, altText: string, caption: string) => void;
   onDelete: () => void;
@@ -289,6 +345,10 @@ function MediaDetailPanel({
         <div className="relative mb-4 aspect-video overflow-hidden border border-border bg-background">
           {item.url ? (
             <Image src={item.url} alt={altText} fill sizes="512px" className="object-contain" />
+          ) : previewUrl ? (
+            // Private preview via a short-lived signed URL — visible to signed-in staff only, not public.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewUrl} alt={altText} onError={onPreviewError} className="h-full w-full object-contain" />
           ) : (
             <div className="flex h-full w-full items-center justify-center font-body text-sm text-foreground-muted">
               Private bucket — not publicly viewable

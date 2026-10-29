@@ -60,6 +60,7 @@ export function BlockRenderer({ blocks, mediaMap = {}, relatedContent = [] }: Bl
                 key={index}
                 block={block}
                 media={block.mediaId ? mediaMap[block.mediaId] : undefined}
+                thumbnail={block.thumbnailMediaId ? mediaMap[block.thumbnailMediaId] : undefined}
               />
             );
           case "callout":
