@@ -14,6 +14,7 @@ import { resolveBodyReferences } from "@/lib/content/resolve-body-references";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicUrl } from "@/lib/storage/buckets";
 import { ContentForm } from "@/components/admin/ContentForm";
+import { getAdminSession } from "@/lib/auth/session";
 import { SpotlightForm } from "@/components/admin/SpotlightForm";
 import { BirthdayForm } from "@/components/admin/BirthdayForm";
 import { AdminPageHeader } from "@/components/admin/ui";
@@ -22,6 +23,7 @@ const REVISIONED_TYPES = ["ARTICLE", "COMPANY_NEWS"];
 
 export default async function EditContentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await getAdminSession();
 
   const [content, authors, categories, publications, sections] = await Promise.all([
     getContentById(id),
@@ -111,6 +113,7 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
       <AdminPageHeader title={`Edit: ${content.title}`} />
       <ContentForm
         content={content}
+        role={session?.role ?? "contributor"}
         authors={authors.map((a) => ({ id: a.id, label: a.name }))}
         categories={categories.map((c) => ({ id: c.id, label: c.name }))}
         publications={publications.map((p) => ({ id: p.id, label: p.title }))}

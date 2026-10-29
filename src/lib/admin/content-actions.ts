@@ -247,6 +247,8 @@ const TRANSITION_AUDIT: Record<string, { status: Database["public"]["Enums"]["co
   "back-to-draft": { status: "draft", action: "RESTORE" },
   schedule: { status: "scheduled", action: "SCHEDULE" },
   "cancel-schedule": { status: "draft", action: "CANCEL_SCHEDULE" },
+  // Sending a story back from review is not an unpublish: nothing was live.
+  "return-to-draft": { status: "draft", action: "UPDATE" },
   "submit-for-review": { status: "review", action: "UPDATE" },
 };
 

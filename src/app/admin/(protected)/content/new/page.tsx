@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { listAuthors, listCategories, listPublications, listSections, getSiteSettings } from "@/lib/admin/queries";
 import { ContentForm } from "@/components/admin/ContentForm";
+import { getAdminSession } from "@/lib/auth/session";
 import { AdminPageHeader } from "@/components/admin/ui";
 
 /** What am I creating? (§4): a spotlight or a birthday has its own dedicated builder (real staff data, not a written body), everything else shares the one form below with a "Content type" dropdown. */
 function CreationChoice({ href, title, description }: { href: string; title: string; description: string }) {
   return (
-    <Link href={href} className="block border border-border p-4 hover:border-secondary-400">
+    <Link href={href} className="block border border-border bg-surface p-4 hover:border-primary-500">
       <p className="font-body text-sm font-medium text-foreground">{title}</p>
       <p className="mt-1 font-body text-xs text-foreground-muted">{description}</p>
     </Link>
@@ -14,6 +15,7 @@ function CreationChoice({ href, title, description }: { href: string; title: str
 }
 
 export default async function NewContentPage() {
+  const session = await getAdminSession();
   const [authors, categories, publications, sections, settings] = await Promise.all([
     listAuthors(),
     listCategories(),
@@ -24,7 +26,7 @@ export default async function NewContentPage() {
 
   return (
     <div>
-      <AdminPageHeader title="New content" description="What are you creating?" />
+      <AdminPageHeader title="New story" description="What are you creating?" />
 
       <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <CreationChoice
@@ -49,6 +51,7 @@ export default async function NewContentPage() {
       </p>
       <ContentForm
         content={null}
+        role={session?.role ?? "contributor"}
         authors={authors.map((a) => ({ id: a.id, label: a.name }))}
         categories={categories.map((c) => ({ id: c.id, label: c.name }))}
         publications={publications.map((p) => ({ id: p.id, label: p.title }))}
