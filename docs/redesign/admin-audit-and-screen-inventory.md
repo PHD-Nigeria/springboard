@@ -89,3 +89,25 @@ Schema-dependent items (evergreen flag, quarter fields, media title/description,
 
 ## 8. Testing limits
 No Supabase instance is available here (Docker images are blocked). Planned: typecheck, lint, build with a throwaway local font, and a mock Supabase HTTP server with fictional fixtures for rendering and keyboard checks. Server actions are not exercised against a real database. Every write path remains unverified until run against a verified isolated environment.
+
+## 9. Status after stages A to D (implemented on this branch)
+
+Implemented and wired to the existing server actions and RLS-scoped queries:
+- Light admin theme scoped to `.admin-theme` (public site and login unchanged), grouped role-aware sidebar, mobile drawer, skip link.
+- Overview (live counts, active edition, my work, scheduled, stalest drafts, activity), Review queue (`/admin/review`), My work and edition/sort filters on All content, confirmation dialogs, Videos list (read-only).
+- Story editor: Publish panel with status, readiness checklist and role-aware actions; searchable block inserter; move buttons and drag; collapse; undo remove; per-block "needs attention"; unsaved-change guard; Ctrl/Cmd+S; success text only after the server action returned without an error; preview in a new tab or phone-size window.
+- Media library: grid and list, search, visibility/type/edition filters, sort, orientation and size, usage, private/public clearly marked, duplicate warning before upload, dimensions recorded at upload, edit alt text and caption, promote and delete only for administrators.
+- Editions workspace (`/admin/publications`, `/admin/publications/[id]`): per-edition live counts, readiness, stories, sections, media, edit, make active (admin), delete with usage warning.
+- Fixes: list Publish readiness check, review-to-draft audit label, new `return-to-draft` intent, search-filter sanitising for content and media, edition `published_at` no longer re-stamped on every save.
+
+Not implemented, with the reason:
+- Evergreen flag, quarter and period fields, DB-level "needs an edition", media title and description, reviewer notes, featured-video setting, manual media-to-edition association: need schema changes (proposed in `proposed-migrations/`, not applied, awaiting approval). Until then "no edition" cannot be told apart from "evergreen".
+- Autosave: not added. A server save writes revisions and audit rows, so autosave would create noise; explicit save with an unsaved-changes guard is used instead.
+- Touch drag-and-drop: the move buttons are the accessible alternative.
+- In-page preview frame: `X-Frame-Options: DENY` is set site-wide; allowing same-origin framing for the preview route is a header change left for approval.
+- Staff Spotlight and Birthday forms keep their own forms and do not have the new Publish panel yet.
+- Contributors, Staff, Sections, Categories, Navigation, Users, Settings and Activity pages get the new theme and sidebar only; their layouts are not redesigned (stage E).
+- Mobile and tablet: layouts were checked in Chromium at 1440 and 390 wide only.
+
+Verification (run, with the output seen): `tsc --noEmit` clean, `eslint` clean, `next build` succeeds (with a local font standing in for the blocked Google font). Rendered against a mock Supabase server with fictional data: axe found no violations on the new screens at 1440 and 390 for an editor and a contributor, and scripted keyboard and mouse checks passed (block inserter, move, undo, unsaved-change guard, Ctrl+S, refused save showing an error and no success text, media dialog, filters).
+Not verified: any real database, RLS behaviour, real uploads and storage, scheduled publishing, Safari and Firefox, screen readers. The mock does not implement RLS, so contributor scoping and permission refusals were only checked where the UI itself decides.

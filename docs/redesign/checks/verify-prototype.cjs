@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- standalone Node check script, not application code */
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');

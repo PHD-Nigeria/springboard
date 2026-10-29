@@ -881,3 +881,135 @@ export async function getMediaEditionUsage(): Promise<Record<string, string[]>> 
 
   return Object.fromEntries([...usage.entries()].map(([id, set]) => [id, [...set]]));
 }
+
+export interface EditionSummary {
+  id: string;
+  title: string;
+  slug: string;
+  subtitle: string | null;
+  status: string;
+  coverMediaId: string | null;
+  coverUrl: string | null;
+  coverAltText: string | null;
+  createdAt: string;
+  publishedAt: string | null;
+  isActive: boolean;
+  counts: ContentStatusCounts;
+  total: number;
+  sectionCount: number;
+  mediaCount: number;
+}
+
+/**
+ * Editions (publications) with live counts. Every number comes from a query against the real tables on each
+ * request: stories by status, sections, and distinct media files referenced by the edition's stories and cover.
+ */
+export async function listEditionSummaries(): Promise<EditionSummary[]> {
+  const supabase = await createClient();
+  const [publicationsResult, contentResult, sectionsResult, settingsResult, mediaUsage] = await Promise.all([
+    supabase
+      .from("publications")
+      .select(PUBLICATION_SELECT)
+      .order("created_at", { ascending: false })
+      .returns<(Database["public"]["Tables"]["publications"]["Row"] & PublicationCoverJoin)[]>(),
+    supabase.from("content").select("publication_id, status"),
+    supabase.from("sections").select("publication_id"),
+    supabase.from("site_settings").select("default_publication_id").eq("id", true).maybeSingle(),
+    getMediaEditionUsage(),
+  ]);
+  if (publicationsResult.error) throw publicationsResult.error;
+  if (contentResult.error) throw contentResult.error;
+  if (sectionsResult.error) throw sectionsResult.error;
+
+  const activeId = settingsResult.data?.default_publication_id ?? null;
+  const statusByPublication = new Map<string, ContentStatusCounts>();
+  for (const row of contentResult.data ?? []) {
+    if (!row.publication_id) continue;
+    const counts = statusByPublication.get(row.publication_id) ?? emptyStatusCounts();
+    counts[row.status] += 1;
+    statusByPublication.set(row.publication_id, counts);
+  }
+  const sectionCounts = countBy((sectionsResult.data ?? []).map((row) => row.publication_id));
+  const mediaCounts = new Map<string, number>();
+  for (const editionIds of Object.values(mediaUsage)) {
+    for (const editionId of editionIds) mediaCounts.set(editionId, (mediaCounts.get(editionId) ?? 0) + 1);
+  }
+
+  return (publicationsResult.data ?? []).map((row) => {
+    const { coverUrl, coverAltText } = withPublicationCoverUrl(supabase, row);
+    const counts = statusByPublication.get(row.id) ?? emptyStatusCounts();
+    return {
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      subtitle: row.subtitle,
+      status: row.status,
+      coverMediaId: row.cover_media_id,
+      coverUrl,
+      coverAltText,
+      createdAt: row.created_at,
+      publishedAt: row.published_at,
+      isActive: row.id === activeId,
+      counts,
+      total: Object.values(counts).reduce((sum, n) => sum + n, 0),
+      sectionCount: sectionCounts.get(row.id) ?? 0,
+      mediaCount: mediaCounts.get(row.id) ?? 0,
+    };
+  });
+}
+
+export interface EditionWorkspaceData {
+  edition: EditionSummary;
+  sections: { id: string; title: string; displayOrder: number; storyCount: number }[];
+  unsectionedCount: number;
+  stories: AdminContentRow[];
+  storyTotal: number;
+  media: AdminMediaRow[];
+}
+
+/** Everything the edition workspace shows, from real queries. Returns null when the edition does not exist or is not visible to this role. */
+export async function getEditionWorkspace(id: string, page = 1): Promise<EditionWorkspaceData | null> {
+  const supabase = await createClient();
+  const summaries = await listEditionSummaries();
+  const edition = summaries.find((item) => item.id === id);
+  if (!edition) return null;
+
+  const [sectionsResult, sectionContentResult, stories, mediaUsage] = await Promise.all([
+    supabase.from("sections").select("id, title, display_order").eq("publication_id", id).order("display_order", { ascending: true }),
+    supabase.from("content").select("section_id").eq("publication_id", id),
+    listContent({ publicationId: id, page, pageSize: 15, sort: "status" }),
+    getMediaEditionUsage(),
+  ]);
+  if (sectionsResult.error) throw sectionsResult.error;
+  if (sectionContentResult.error) throw sectionContentResult.error;
+
+  const perSection = countBy((sectionContentResult.data ?? []).map((row) => row.section_id));
+  const sections = (sectionsResult.data ?? []).map((section) => ({
+    id: section.id,
+    title: section.title,
+    displayOrder: section.display_order,
+    storyCount: perSection.get(section.id) ?? 0,
+  }));
+  const unsectionedCount = (sectionContentResult.data ?? []).filter((row) => !row.section_id).length;
+
+  const mediaIds = Object.entries(mediaUsage)
+    .filter(([, editionIds]) => editionIds.includes(id))
+    .map(([mediaId]) => mediaId)
+    .slice(0, 24);
+  const media = mediaIds.length ? await listMediaByIds(mediaIds) : [];
+
+  return { edition, sections, unsectionedCount, stories: stories.rows, storyTotal: stories.total, media };
+}
+
+async function listMediaByIds(ids: string[]): Promise<AdminMediaRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("media")
+    .select("id, bucket, storage_path, original_filename, alt_text, caption, mime_type, width, height, file_size_bytes, created_at")
+    .in("id", ids);
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    ...row,
+    url: row.bucket === "public" ? getPublicUrl(supabase, row.storage_path) : null,
+  }));
+}

@@ -286,21 +286,28 @@ export async function savePublicationAction(formData: FormData): Promise<Taxonom
     cover_media_id: nullableString(formData, "cover_media_id"),
     status,
   };
-  if (status === "published") record.published_at = new Date().toISOString();
 
   if (id) {
+    // Only stamp the publication date when an edition actually becomes published. Re-saving an edition that was
+    // already published must not move its published date.
+    if (status === "published") {
+      const { data: before } = await supabase.from("publications").select("status").eq("id", id).maybeSingle();
+      if (before?.status !== "published") record.published_at = new Date().toISOString();
+    }
     const { data, error } = await supabase.from("publications").update(record).eq("id", id).select("id");
     if (error) return { error: describeError(error.message) };
     const denied = permissionResult(data);
     if (denied) return denied;
     await logAuditEvent(supabase, { actorUserId: user.id, action: "UPDATE", entityType: "PUBLICATION", entityId: id, metadata: { title, slug, status } });
   } else {
+    if (status === "published") record.published_at = new Date().toISOString();
     const { data, error } = await supabase.from("publications").insert(record).select("id").single();
     if (error) return { error: describeError(error.message) };
     await logAuditEvent(supabase, { actorUserId: user.id, action: "CREATE", entityType: "PUBLICATION", entityId: data.id, metadata: { title, slug, status } });
   }
 
   revalidatePath("/admin/publications");
+  if (id) revalidatePath(`/admin/publications/${id}`);
   revalidatePath("/");
   return { error: null };
 }
