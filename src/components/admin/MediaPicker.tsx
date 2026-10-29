@@ -145,7 +145,9 @@ export function MediaPicker({ selected, onSelect, onClear }: MediaPickerProps) {
         <div className="mt-4 border border-border bg-background p-4">
           <div className="mb-4 flex items-center justify-between gap-4">
             <AdminInput
-              placeholder="Search media…"
+              aria-label="Search the media library"
+              type="search"
+              placeholder="Search by filename, alt text or caption"
               value={query}
               onChange={(event) => runSearch(event.target.value)}
               className="max-w-xs"
@@ -155,30 +157,39 @@ export function MediaPicker({ selected, onSelect, onClear }: MediaPickerProps) {
             </AdminButton>
           </div>
 
-          <div className="mb-4 grid grid-cols-4 gap-2 md:grid-cols-6">
-            {results.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  onSelect(item);
-                  setOpen(false);
-                }}
-                className="relative aspect-square overflow-hidden border border-border hover:border-secondary-400"
-              >
-                {item.url ? (
-                  <Image src={item.url} alt={item.alt_text ?? ""} fill sizes="120px" className="object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-surface font-body text-[10px] text-foreground-muted">
-                    private
-                  </div>
-                )}
-              </button>
-            ))}
+          <ul className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
+            {results.map((item) => {
+              const name = item.original_filename ?? item.storage_path.split("/").pop() ?? "image";
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelect(item);
+                      setOpen(false);
+                    }}
+                    aria-label={`Choose ${name} (${item.bucket})${item.alt_text ? `. ${item.alt_text}` : ""}`}
+                    className="block w-full border border-border bg-surface text-left hover:border-primary-500"
+                  >
+                    <span className="relative block aspect-square overflow-hidden bg-surface-raised">
+                      {item.url ? (
+                        <Image src={item.url} alt="" fill sizes="120px" className="object-cover" />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center font-body text-[11px] text-foreground-muted">Private</span>
+                      )}
+                    </span>
+                    <span className="block truncate px-1.5 py-1 font-body text-[11px] text-foreground" title={name}>
+                      {name}
+                    </span>
+                    <span className="block px-1.5 pb-1 font-body text-[10px] font-semibold text-foreground-muted uppercase">{item.bucket}</span>
+                  </button>
+                </li>
+              );
+            })}
             {results.length === 0 && !pending && (
-              <p className="col-span-full font-body text-sm text-foreground-muted">No media found.</p>
+              <li className="col-span-full font-body text-sm text-foreground-muted">No images found. Try another search or upload one below.</li>
             )}
-          </div>
+          </ul>
 
           <div className="border-t border-border pt-4">
             <p className="mb-2 font-body text-xs font-medium tracking-wide text-foreground-muted uppercase">

@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { listMedia } from "@/lib/admin/queries";
+import { listMedia, listPublications, getMediaEditionUsage } from "@/lib/admin/queries";
 import { getAdminSession } from "@/lib/auth/session";
 import { MediaLibrary } from "@/components/admin/MediaLibrary";
 import { AdminPageHeader } from "@/components/admin/ui";
 
 export default async function AdminMediaPage() {
-  const [media, session] = await Promise.all([listMedia(), getAdminSession()]);
+  const [media, session, editionUsage, publications] = await Promise.all([listMedia(), getAdminSession(), getMediaEditionUsage(), listPublications()]);
 
   return (
     <div>
       <AdminPageHeader
-        title="Media Library"
+        title="Media library"
         description="Upload and manage images used across Springboard."
         actions={
           session?.role === "admin" ? (
@@ -24,7 +24,12 @@ export default async function AdminMediaPage() {
           ) : undefined
         }
       />
-      <MediaLibrary initialMedia={media} />
+      <MediaLibrary
+        initialMedia={media}
+        editionUsage={editionUsage}
+        editions={publications.map((p) => ({ id: p.id, title: p.title }))}
+        role={session?.role ?? "contributor"}
+      />
     </div>
   );
 }

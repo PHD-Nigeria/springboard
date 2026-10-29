@@ -42,6 +42,33 @@ export function isRetryableMediaUploadError(message: string): boolean {
   return RETRYABLE_MEDIA_UPLOAD_ERRORS.includes(message);
 }
 
+/** Reads the image's pixel size in the browser. Returns null when the browser cannot decode it; the upload carries on without dimensions. */
+async function measureImage(file: File): Promise<{ width: number; height: number } | null> {
+  try {
+    if (typeof createImageBitmap === "function") {
+      const bitmap = await createImageBitmap(file);
+      const size = { width: bitmap.width, height: bitmap.height };
+      bitmap.close();
+      return size;
+    }
+  } catch {
+    // fall through to the <img> route
+  }
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      resolve(null);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+}
+
 export async function uploadMediaDirect(file: File | null | undefined, options: MediaUploadOptions = {}): Promise<MediaActionResult> {
   const { altText = "", caption = "", bucket = "private", onStageChange } = options;
 
@@ -109,8 +136,11 @@ export async function uploadMediaDirect(file: File | null | undefined, options: 
 
   // --- Step 3: ask the server to verify and record it. ---
   onStageChange?.("saving");
+  const size = await measureImage(file);
   try {
     return await completeMediaUploadAction({
+      width: size?.width ?? null,
+      height: size?.height ?? null,
       path: prepared.path,
       bucket, // the bucket this whole call was made for — same value createMediaUploadUrlAction echoed back in prepared.bucket
       originalFilename: file.name,

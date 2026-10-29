@@ -115,6 +115,13 @@ export interface CompleteMediaUploadInput {
   fileSize: number;
   altText: string | null;
   caption: string | null;
+  /** Measured in the browser before upload (optional). Accepted only as whole numbers in a sane range; anything else is stored as unknown. */
+  width?: number | null;
+  height?: number | null;
+}
+
+function sanePixelSize(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 30000 ? value : null;
 }
 
 /**
@@ -190,9 +197,10 @@ export async function completeMediaUploadAction(input: CompleteMediaUploadInput)
       original_filename: input.originalFilename || null,
       mime_type: input.mimeType,
       file_size_bytes: input.fileSize,
-      // width/height are left null — no image-decoding library in this server
-      // runtime, and every consumer (next/image `fill` + a fixed aspect-ratio
-      // container) doesn't depend on intrinsic dimensions to render correctly.
+      // width/height come from the browser (it can decode the image; this server runtime cannot). They only
+      // drive the orientation badge, never any rendering, so an absent or implausible value is simply stored as null.
+      width: sanePixelSize(input.width),
+      height: sanePixelSize(input.height),
       alt_text: input.altText,
       caption: input.caption,
       uploaded_by: user.id,

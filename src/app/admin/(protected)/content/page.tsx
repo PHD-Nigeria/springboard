@@ -69,7 +69,7 @@ export default async function AdminContentListPage({ searchParams }: { searchPar
         }
       />
 
-      <form className="mb-5 grid grid-cols-1 items-end gap-3 border border-border bg-surface p-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto]" method="get">
+      <form className="mb-5 grid grid-cols-1 items-end gap-3 border border-border bg-surface p-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(9rem,1fr))_auto]" method="get">
         {mine && <input type="hidden" name="scope" value="mine" />}
         <div>
           <AdminLabel htmlFor="q">Search</AdminLabel>

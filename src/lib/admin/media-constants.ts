@@ -78,3 +78,6 @@ export const RETRYABLE_MEDIA_UPLOAD_ERRORS: readonly string[] = [
   MEDIA_UPLOAD_ERRORS.INVALID_REFERENCE,
   MEDIA_UPLOAD_ERRORS.UNEXPECTED,
 ];
+
+/** Token used in the media edition-usage map for content that has no edition. Client-safe, so it lives here rather than in the server-only queries module. */
+export const NO_EDITION_TOKEN = "none";

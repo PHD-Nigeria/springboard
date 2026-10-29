@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import { getPublicUrl } from "@/lib/storage/buckets";
+import { NO_EDITION_TOKEN } from "@/lib/admin/media-constants";
 
 /**
  * Admin-scoped reads. These deliberately live apart from
@@ -430,9 +431,11 @@ export async function listMedia(search?: string, bucket?: "public" | "private", 
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (search) {
+  // Characters with meaning inside a PostgREST .or() filter are stripped so a search for "a,b" or "(x)" cannot change the filter itself.
+  const term = search?.replace(/[,()*%\\]/g, " ").trim();
+  if (term) {
     query = query.or(
-      `alt_text.ilike.%${search}%,caption.ilike.%${search}%,storage_path.ilike.%${search}%,original_filename.ilike.%${search}%`
+      `alt_text.ilike.%${term}%,caption.ilike.%${term}%,storage_path.ilike.%${term}%,original_filename.ilike.%${term}%`
     );
   }
   if (bucket) query = query.eq("bucket", bucket);
@@ -832,4 +835,49 @@ export async function getEditionSnapshotById(id: string): Promise<EditionSnapsho
     total: content.data?.length ?? 0,
     sectionCount: sections.count ?? 0,
   };
+}
+
+
+/**
+ * Which editions each media file is used in, derived from where the file is actually referenced
+ * (story cover, image/gallery/video-thumbnail blocks, gallery attachments, edition cover).
+ * No schema change: the same references getMediaUsageAction already follows, read once for the whole library.
+ * A file used by a story with no edition maps to NO_EDITION_TOKEN; a file used nowhere has no entry.
+ * Runs through the signed-in user's RLS-scoped client.
+ */
+export async function getMediaEditionUsage(): Promise<Record<string, string[]>> {
+  const supabase = await createClient();
+  const [contentResult, galleryResult, publicationResult] = await Promise.all([
+    supabase.from("content").select("id, publication_id, cover_media_id, body"),
+    supabase.from("media").select("id, content_id").not("content_id", "is", null),
+    supabase.from("publications").select("id, cover_media_id").not("cover_media_id", "is", null),
+  ]);
+  if (contentResult.error) throw contentResult.error;
+
+  const usage = new Map<string, Set<string>>();
+  const add = (mediaId: unknown, publicationId: string | null) => {
+    if (typeof mediaId !== "string" || !mediaId) return;
+    const set = usage.get(mediaId) ?? new Set<string>();
+    set.add(publicationId ?? NO_EDITION_TOKEN);
+    usage.set(mediaId, set);
+  };
+
+  const publicationByContent = new Map<string, string | null>();
+  for (const row of contentResult.data ?? []) {
+    publicationByContent.set(row.id, row.publication_id);
+    add(row.cover_media_id, row.publication_id);
+    const blocks = (row.body as { blocks?: unknown } | null)?.blocks;
+    if (!Array.isArray(blocks)) continue;
+    for (const block of blocks as Array<Record<string, unknown>>) {
+      add(block?.mediaId, row.publication_id);
+      add(block?.thumbnailMediaId, row.publication_id);
+      if (Array.isArray(block?.mediaIds)) for (const id of block.mediaIds) add(id, row.publication_id);
+    }
+  }
+  for (const row of galleryResult.data ?? []) {
+    if (row.content_id) add(row.id, publicationByContent.get(row.content_id) ?? null);
+  }
+  for (const row of publicationResult.data ?? []) add(row.cover_media_id, row.id);
+
+  return Object.fromEntries([...usage.entries()].map(([id, set]) => [id, [...set]]));
 }
