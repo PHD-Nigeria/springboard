@@ -1007,3 +1007,64 @@ export async function getUnsectionedContentForPublication(publicationId: string)
   if (error) throw error;
   return (data ?? []).map((row) => mapRichContentRow(supabase, row));
 }
+
+export interface ArchiveEdition {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  code: string | null;
+  storyCount: number;
+  galleryCount: number;
+  videoCount: number;
+  coverImageUrl: string | null;
+}
+
+/**
+ * Every publicly visible edition, newest first, with what it holds (stories, galleries, videos). Visibility is the same rule
+ * the rest of the site uses; a draft or not-yet-due edition never appears here, whoever is looking.
+ */
+export async function getPublishedEditions(): Promise<ArchiveEdition[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("publications")
+    .select("id, slug, title, subtitle, status, publish_at, published_at, publication_cover_media:cover_media_id ( storage_path, bucket )")
+    .returns<(Pick<PublicationRow, "id" | "slug" | "title" | "subtitle" | "status" | "publish_at" | "published_at"> & { publication_cover_media: { storage_path: string; bucket: "public" | "private" } | null })[]>();
+  if (error) throw error;
+  const editions = (data ?? []).filter((edition) => isEditionPubliclyVisible(edition));
+  if (editions.length === 0) return [];
+
+  const { data: items, error: itemsError } = await supabase
+    .from("content")
+    .select("publication_id, content_type, body")
+    .in("publication_id", editions.map((edition) => edition.id))
+    .or(publicStatusOrFilter())
+    .returns<{ publication_id: string; content_type: Content["contentType"]; body: unknown }[]>();
+  if (itemsError) throw itemsError;
+  const videos = await getHomeVideos();
+
+  return editions
+    .sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""))
+    .map((edition) => {
+      const mine = (items ?? [])
+        .filter((row) => row.publication_id === edition.id)
+        .map((row) => {
+          const parsed = safeParseBodyDocument(row.body);
+          return { contentType: row.content_type, body: parsed.success ? parsed.data : createEmptyBodyDocument() };
+        });
+      return {
+        id: edition.id,
+        slug: edition.slug,
+        title: edition.title,
+        subtitle: edition.subtitle,
+        code: editionCodeFromSlug(edition.slug),
+        storyCount: mine.filter(isEditorialStory).length,
+        galleryCount: mine.filter((item) => item.contentType === "GALLERY").length,
+        videoCount: videos.filter((video) => video.editionSlug === edition.slug).length,
+        coverImageUrl:
+          edition.publication_cover_media && edition.publication_cover_media.bucket === "public"
+            ? getPublicUrl(supabase, edition.publication_cover_media.storage_path)
+            : null,
+      };
+    });
+}
