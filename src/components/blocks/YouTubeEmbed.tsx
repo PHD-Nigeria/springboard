@@ -81,7 +81,7 @@ export function YouTubeEmbed({ videoId, title, caption, orientation, thumbnail, 
             <span aria-hidden="true" className="absolute inset-0 bg-black/30 transition-colors group-hover:bg-black/20" />
             <span
               aria-hidden="true"
-              className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-primary-900 transition-transform group-hover:scale-105"
+              className={`relative flex items-center justify-center text-primary-900 transition-transform group-hover:scale-105 ${compact ? "h-14 w-14 bg-secondary-400" : "h-16 w-16 rounded-full bg-white/90"}`}
             >
               <svg viewBox="0 0 24 24" className="ml-1 h-7 w-7" fill="currentColor">
                 <path d="M8 5v14l11-7z" />
