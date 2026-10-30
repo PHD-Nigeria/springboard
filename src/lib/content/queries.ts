@@ -5,6 +5,8 @@ import type { Content, Author } from "@/content-types/types";
 import { safeParseBodyDocument, createEmptyBodyDocument } from "@/content-types/blocks";
 import { getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
 import { getAdminSession } from "@/lib/auth/session";
+import { cache } from "react";
+import { isEditionPubliclyVisible, publicEditionOrFilter } from "@/lib/content/visibility";
 import { isValidYouTubeId, parseYouTubeUrl } from "@/lib/video/youtube";
 
 type ContentRow = Database["public"]["Tables"]["content"]["Row"];
@@ -12,6 +14,27 @@ type PublicationRow = Database["public"]["Tables"]["publications"]["Row"];
 type SectionRow = Database["public"]["Tables"]["sections"]["Row"];
 type StaffRow = Database["public"]["Tables"]["staff"]["Row"];
 type AuthorRow = Database["public"]["Tables"]["authors"]["Row"];
+
+/**
+ * Ids of the editions a PUBLIC visitor may see (published, or scheduled and due) — decided here from each edition's
+ * status, not from whether row-level security happened to return it, because signed-in staff can read every edition.
+ * Memoised per request, so a page that runs many list queries pays for it once.
+ */
+const getPublicEditionIds = cache(async (): Promise<string[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("publications").select("id, status, publish_at");
+  if (error) throw error;
+  return (data ?? []).filter((edition) => isEditionPubliclyVisible(edition)).map((edition) => edition.id);
+});
+
+/**
+ * Added to every PUBLIC content query: a story is discoverable only if it has no edition (evergreen) or its edition is
+ * publicly visible. Without it, a story published inside a still-draft edition leaks through lists, search and the
+ * homepage even though its own page 404s. Not applied to the staff preview, which is meant to see everything.
+ */
+export async function publicEditionFilter(): Promise<string> {
+  return publicEditionOrFilter(await getPublicEditionIds());
+}
 
 /**
  * Maps a raw `content` row to the app-facing Content shape. A row whose
@@ -173,6 +196,7 @@ export async function getContentForSection(sectionId: string): Promise<Content[]
   const { data, error } = await supabase
     .from("content")
     .select(RICH_CONTENT_SELECT)
+    .or(await publicEditionFilter())
     .eq("section_id", sectionId)
     .order("display_order", { ascending: true })
     .order("published_at", { ascending: false, nullsFirst: false })
@@ -259,6 +283,7 @@ export async function getContentById(id: string): Promise<Content | null> {
   const { data, error } = await supabase
     .from("content")
     .select(RICH_CONTENT_SELECT)
+    .or(await publicEditionFilter())
     .eq("id", id)
     .maybeSingle()
     .returns<RichContentRow | null>();
@@ -303,6 +328,7 @@ export async function getRecentContent(limit: number): Promise<Content[]> {
   const { data, error } = await supabase
     .from("content")
     .select(RICH_CONTENT_SELECT)
+    .or(await publicEditionFilter())
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit)
     .returns<RichContentRow[]>();
@@ -320,6 +346,7 @@ export async function getNewsBites(
   let query = supabase
     .from("content")
     .select(RICH_CONTENT_SELECT)
+    .or(await publicEditionFilter())
     .eq("content_type", "COMPANY_NEWS")
     .order("published_at", { ascending: false, nullsFirst: false });
 
@@ -346,6 +373,7 @@ export async function searchContent(query: string, limit = 20): Promise<Content[
   const { data, error } = await supabase
     .from("content")
     .select(RICH_CONTENT_SELECT)
+    .or(await publicEditionFilter())
     .textSearch("search_vector", query, { type: "websearch", config: "english" })
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit)
@@ -440,6 +468,7 @@ export async function getContentByAuthor(
   let query = supabase
     .from("content")
     .select(RICH_CONTENT_SELECT)
+    .or(await publicEditionFilter())
     .eq("author_id", authorId)
     .order("published_at", { ascending: false, nullsFirst: false });
 
@@ -466,6 +495,7 @@ export async function getRelatedContent(
   const { data, error } = await supabase
     .from("content")
     .select(RICH_CONTENT_SELECT)
+    .or(await publicEditionFilter())
     .eq("category_id", categoryId)
     .neq("id", excludeContentId)
     .order("published_at", { ascending: false, nullsFirst: false })
@@ -621,6 +651,7 @@ export async function getContentByCategoryId(categoryId: string, limit = 30): Pr
   const { data, error } = await supabase
     .from("content")
     .select(RICH_CONTENT_SELECT)
+    .or(await publicEditionFilter())
     .eq("category_id", categoryId)
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit)
@@ -777,14 +808,15 @@ export async function getActiveEdition(): Promise<ActiveEdition | null> {
     .returns<{ default_publication_id: string | null } | null>();
   if (settingsError) throw settingsError;
 
-  let query = supabase.from("publications").select("id, slug, title, subtitle");
+  let query = supabase.from("publications").select("id, slug, title, subtitle, status, publish_at");
   query = settings?.default_publication_id
     ? query.eq("id", settings.default_publication_id)
     : query.order("published_at", { ascending: false, nullsFirst: false }).limit(1);
-  const { data, error } = await query.returns<{ id: string; slug: string; title: string; subtitle: string | null }[]>();
+  const { data, error } = await query.returns<{ id: string; slug: string; title: string; subtitle: string | null; status: string; publish_at: string | null }[]>();
   if (error) throw error;
   const publication = data?.[0];
-  if (!publication) return null;
+  // A draft (or not-yet-due) edition is never the public "active edition", whoever is looking.
+  if (!publication || !isEditionPubliclyVisible(publication)) return null;
 
   const { count, error: countError } = await supabase
     .from("content")
@@ -794,7 +826,10 @@ export async function getActiveEdition(): Promise<ActiveEdition | null> {
 
   const videos = await getHomeVideos();
   return {
-    ...publication,
+    id: publication.id,
+    slug: publication.slug,
+    title: publication.title,
+    subtitle: publication.subtitle,
     code: editionCodeFromSlug(publication.slug),
     storyCount: count ?? 0,
     videoCount: videos.filter((v) => v.editionSlug === publication.slug).length,
@@ -829,6 +864,7 @@ export async function getHomeVideos(limit = 24): Promise<HomeVideo[]> {
     .from("content")
     .select(`${RICH_CONTENT_SELECT.replace("content_publication:publication_id ( slug )", "content_publication:publication_id ( slug, title )")}`)
     .contains("body", { blocks: [{ type: "video" }] })
+    .or(await publicEditionFilter())
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit)
     .returns<(RichContentRow & { content_publication: { slug: string; title: string } | null })[]>();

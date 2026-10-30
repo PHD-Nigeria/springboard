@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/types";
 import type { Block, BodyDocument } from "@/content-types/blocks";
 import { getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
 import { getAdminSession } from "@/lib/auth/session";
+import { publicEditionFilter } from "@/lib/content/queries";
 
 interface ResolvedMedia {
   url: string;
@@ -71,6 +72,9 @@ export async function resolveBodyReferences(
 ): Promise<{ mediaMap: Record<string, ResolvedMedia>; relatedContent: ResolvedRelatedContent[] }> {
   const mediaIds = collectMediaIds(body.blocks);
   const relatedIds = collectRelatedContentIds(body.blocks);
+  // Related-content links are a public discovery surface too: on a public page, never list a story whose edition is not
+  // public. (The staff preview, which passes includePrivate, keeps seeing everything it is allowed to.)
+  const editionFilter = options.includePrivate === true ? "id.not.is.null" : await publicEditionFilter();
 
   const [mediaResult, relatedResult] = await Promise.all([
     mediaIds.length
@@ -85,6 +89,7 @@ export async function resolveBodyReferences(
           .from("content")
           .select("id, title, slug, publications:publication_id ( slug )")
           .in("id", relatedIds)
+          .or(editionFilter)
           .returns<RelatedContentRow[]>()
       : Promise.resolve({ data: [] as RelatedContentRow[], error: null }),
   ]);
