@@ -77,6 +77,11 @@ const SUCCESS_TEXT: Record<Intent, string> = {
 };
 
 const CONFIRMS: Partial<Record<Intent, { title: string; description: string; confirmLabel: string }>> = {
+  publish: {
+    title: "Publish this story now?",
+    description: "It goes live on the public site immediately and becomes visible to everyone. You can unpublish it afterwards, but anyone who sees it first will have seen it.",
+    confirmLabel: "Publish now",
+  },
   unpublish: {
     title: "Unpublish this story?",
     description: "It will disappear from the public site and return to draft. You can publish it again later.",

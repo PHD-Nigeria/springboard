@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveBirthdayAction, type BirthdayFormState } from "@/lib/admin/birthday-actions";
 import { AdminButton, AdminInput, AdminLabel, AdminSelect, StatusBadge } from "@/components/admin/ui";
 import { MediaPicker } from "@/components/admin/MediaPicker";
+import { ConfirmPublishButton } from "@/components/admin/ConfirmPublishButton";
 import type { AdminContentRow, AdminStaffRow } from "@/lib/admin/queries";
 
 const initialState: BirthdayFormState = { error: null };
@@ -96,9 +97,13 @@ export function BirthdayForm({ content, staffOptions, categoryId, initialStaffId
           {pending ? "Saving…" : content?.status === "published" ? "Save changes" : "Save draft"}
         </AdminButton>
         {content?.status !== "published" && (
-          <AdminButton type="submit" name="intent" value="publish" disabled={pending}>
+          <ConfirmPublishButton
+            disabled={pending}
+            title="Publish this birthday card now?"
+            description="It goes live on the public site immediately and becomes visible to everyone. You can unpublish it afterwards."
+          >
             Publish
-          </AdminButton>
+          </ConfirmPublishButton>
         )}
       </div>
     </form>

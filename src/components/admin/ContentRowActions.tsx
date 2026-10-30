@@ -179,7 +179,13 @@ export function ContentRowActions({
           <AdminButton
             disabled={isPending || Boolean(publishBlockedReason)}
             aria-describedby={publishBlockedReason ? `blocked-${id}` : undefined}
-            onClick={() => runStatus("published", "Published.")}
+            onClick={() =>
+              ask("published", {
+                title: "Publish this story now?",
+                description: `"${title}" goes live on the public site immediately and becomes visible to everyone.`,
+                confirmLabel: "Publish now",
+              })
+            }
           >
             Publish<span className="sr-only">: {title}</span>
           </AdminButton>
@@ -238,7 +244,7 @@ export function ContentRowActions({
         onConfirm={() => {
           if (!confirm) return;
           if (confirm.kind === "delete") runDelete();
-          else runStatus(confirm.target, confirm.title.includes("Unpublish") ? "Unpublished." : confirm.target === "archived" ? "Archived." : "Moved to draft.");
+          else runStatus(confirm.target, confirm.target === "published" ? "Published." : confirm.title.includes("Unpublish") ? "Unpublished." : confirm.target === "archived" ? "Archived." : "Moved to draft.");
         }}
       />
     </div>

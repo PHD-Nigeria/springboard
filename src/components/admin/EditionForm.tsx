@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { savePublicationAction } from "@/lib/admin/taxonomy-actions";
 import { AdminButton, AdminInput, AdminLabel, AdminNotice, AdminSelect } from "@/components/admin/ui";
 import { MediaPicker } from "@/components/admin/MediaPicker";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export interface EditionFormValues {
   id?: string;
@@ -48,8 +49,27 @@ export function EditionForm({
   const [cover, setCover] = useState(initial?.cover ?? null);
   const [message, setMessage] = useState<{ tone: "error" | "success"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
+  const [status, setStatus] = useState(initial?.status ?? "draft");
+  // Set when someone saves an edition as Published that is not published yet: nothing is saved until they confirm.
+  const [confirmPublish, setConfirmPublish] = useState<FormData | null>(null);
+
+  // Submitted through onSubmit rather than `<form action>`: React resets a form's fields after an action runs, which would
+  // snap the Status back to its old value behind the confirmation. The browser's own required/pattern checks still run first.
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending) return;
+    submit(new FormData(event.currentTarget));
+  }
 
   function submit(formData: FormData) {
+    if (formData.get("status") === "published" && initial?.status !== "published") {
+      setConfirmPublish(formData);
+      return;
+    }
+    save(formData);
+  }
+
+  function save(formData: FormData) {
     setMessage(null);
     startTransition(async () => {
       const result = await savePublicationAction(formData);
@@ -64,7 +84,7 @@ export function EditionForm({
   }
 
   return (
-    <form action={submit} className={`grid grid-cols-1 gap-4 bg-surface p-4 ${compact ? "" : "border border-border md:grid-cols-2"}`}>
+    <form onSubmit={handleSubmit} className={`grid grid-cols-1 gap-4 bg-surface p-4 ${compact ? "" : "border border-border md:grid-cols-2"}`}>
       {initial?.id && <input type="hidden" name="id" value={initial.id} />}
       <input type="hidden" name="cover_media_id" value={cover?.id ?? ""} />
       <div>
@@ -106,7 +126,7 @@ export function EditionForm({
       </div>
       <div>
         <AdminLabel htmlFor="edition-status">Status</AdminLabel>
-        <AdminSelect id="edition-status" name="status" defaultValue={initial?.status ?? "draft"}>
+        <AdminSelect id="edition-status" name="status" value={status} onChange={(event) => setStatus(event.target.value)}>
           <option value="draft">Draft (not public)</option>
           <option value="published">Published (public)</option>
           <option value="archived">Archived</option>
@@ -131,6 +151,19 @@ export function EditionForm({
           </AdminButton>
         )}
       </div>
+      <ConfirmDialog
+        open={confirmPublish !== null}
+        pending={pending}
+        title="Publish this edition?"
+        description="The edition becomes public immediately: every story in it that is itself published appears on the public site. You can set it back to draft afterwards."
+        confirmLabel="Publish edition"
+        onCancel={() => setConfirmPublish(null)}
+        onConfirm={() => {
+          const data = confirmPublish;
+          setConfirmPublish(null);
+          if (data) save(data);
+        }}
+      />
     </form>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveSpotlightAction, type SpotlightFormState } from "@/lib/admin/spotlight-actions";
 import { AdminButton, AdminInput, AdminLabel, AdminSelect, AdminTextarea, StatusBadge } from "@/components/admin/ui";
 import { MediaPicker } from "@/components/admin/MediaPicker";
+import { ConfirmPublishButton } from "@/components/admin/ConfirmPublishButton";
 import type { AdminContentRow, AdminStaffRow } from "@/lib/admin/queries";
 
 interface QAPair {
@@ -175,9 +176,13 @@ export function SpotlightForm({ content, staffOptions, categoryId, initialStaffI
           {pending ? "Saving…" : content?.status === "published" ? "Save changes" : "Save draft"}
         </AdminButton>
         {content?.status !== "published" && (
-          <AdminButton type="submit" name="intent" value="publish" disabled={pending}>
+          <ConfirmPublishButton
+            disabled={pending}
+            title="Publish this spotlight now?"
+            description="It goes live on the public site immediately and becomes visible to everyone. You can unpublish it afterwards."
+          >
             Publish
-          </AdminButton>
+          </ConfirmPublishButton>
         )}
       </div>
     </form>
