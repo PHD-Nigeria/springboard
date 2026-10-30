@@ -2,6 +2,7 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Hero } from "@/components/editorial/Hero";
+import { isVideoOnly } from "@/lib/content/home-helpers";
 import { EditorialSection } from "@/components/editorial/EditorialSection";
 import {
   getPublicationBySlug,
@@ -54,7 +55,7 @@ export default async function PublicationPage({
   );
   const hasAnyContent = sectionsWithContent.some(({ items }) => items.length > 0);
   // An edition with no sections (or with stories that sit in none) still lists its published stories rather than claiming it has none.
-  const unsectioned = await getUnsectionedContentForPublication(publication.id);
+  const unsectioned = (await getUnsectionedContentForPublication(publication.id)).filter((item) => !isVideoOnly(item));
 
   return (
     <>

@@ -43,3 +43,10 @@ test("the public status filter admits published, and scheduled items only once d
   );
   assert.ok(!/draft|archived|review/.test(publicStatusOrFilter()));
 });
+
+import { isVideoOnly } from "../src/lib/content/home-helpers.ts";
+test("isVideoOnly is true only when every block is a video", () => {
+  assert.equal(isVideoOnly({ body: { version: 1, blocks: [video, video] } }), true);
+  assert.equal(isVideoOnly({ body: { version: 1, blocks: [video, para] } }), false);
+  assert.equal(isVideoOnly({ body: { version: 1, blocks: [] } }), false);
+});

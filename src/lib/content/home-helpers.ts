@@ -5,10 +5,13 @@ import type { Content } from "@/content-types/types";
  * videos (the featured-video panel plays those). Everything else published stays a story.
  */
 export function isEditorialStory(content: Pick<Content, "contentType" | "body">): boolean {
-  if (content.contentType === "GALLERY") return false;
+  return content.contentType !== "GALLERY" && !isVideoOnly(content);
+}
+
+/** An item whose whole body is video blocks: it exists to hold videos for the featured-video panel, not to be read as a story. */
+export function isVideoOnly(content: Pick<Content, "body">): boolean {
   const blocks = content.body.blocks;
-  if (blocks.length > 0 && blocks.every((block) => block.type === "video")) return false;
-  return true;
+  return blocks.length > 0 && blocks.every((block) => block.type === "video");
 }
 
 const QUARTER_MONTHS: Record<string, string> = { "1": "Jan–Mar", "2": "Apr–Jun", "3": "Jul–Sep", "4": "Oct–Dec" };
