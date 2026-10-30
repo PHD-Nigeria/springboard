@@ -7,6 +7,7 @@ import {
   getPublicationBySlug,
   getSectionsForPublication,
   getContentForSection,
+  getUnsectionedContentForPublication,
 } from "@/lib/content/queries";
 
 type PublicationPageParams = { publicationSlug: string };
@@ -52,6 +53,8 @@ export default async function PublicationPage({
     }))
   );
   const hasAnyContent = sectionsWithContent.some(({ items }) => items.length > 0);
+  // An edition with no sections (or with stories that sit in none) still lists its published stories rather than claiming it has none.
+  const unsectioned = await getUnsectionedContentForPublication(publication.id);
 
   return (
     <>
@@ -62,10 +65,13 @@ export default async function PublicationPage({
         imageAlt={publication.title}
         fallbackSeed={publication.id}
       />
-      {hasAnyContent ? (
-        sectionsWithContent.map(({ section, items }) => (
-          <EditorialSection key={section.id} title={section.title} items={items} />
-        ))
+      {hasAnyContent || unsectioned.length > 0 ? (
+        <>
+          {sectionsWithContent.map(({ section, items }) => (
+            <EditorialSection key={section.id} title={section.title} items={items} />
+          ))}
+          {unsectioned.length > 0 && <EditorialSection title={hasAnyContent ? "More from this edition" : "Stories in this edition"} items={unsectioned} />}
+        </>
       ) : (
         <section className="mx-auto max-w-6xl px-gutter py-section-lg text-center">
           <p className="font-body text-sm text-foreground-muted">

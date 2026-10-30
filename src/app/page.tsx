@@ -1,4 +1,8 @@
-import { getRecentContent, getFeaturedContributors, getNewsBites, getPublicSiteSettings, getContentById, getAuthorsByIds, getActiveEdition, getHomeVideos, pickFeaturedVideo } from "@/lib/content/queries";
+import { getRecentContent, getFeaturedContributors, getNewsBites, getPublicSiteSettings, getContentById, getAuthorsByIds, getActiveEdition, getHomeVideos, pickFeaturedVideo, getEditionGallery } from "@/lib/content/queries";
+import { isEditorialStory } from "@/lib/content/home-helpers";
+import { NewsTicker } from "@/components/home/NewsTicker";
+import { EditionGrid } from "@/components/home/EditionGrid";
+import { PhotoBand } from "@/components/home/PhotoBand";
 import "@/components/home/home-theme.css";
 import { FeaturedVideoPanel } from "@/components/home/FeaturedVideoPanel";
 import { EditionPanel } from "@/components/home/EditionPanel";
@@ -9,14 +13,18 @@ import { EditorialBanner } from "@/components/editorial/EditorialBanner";
 import { ContributorCard } from "@/components/editorial/ContributorCard";
 
 export default async function Home() {
-  const [recent, contributors, newsBites, settings, edition, allVideos] = await Promise.all([
-    getRecentContent(9),
+  const [recentAll, contributors, newsBites, settings, edition, allVideos] = await Promise.all([
+    getRecentContent(14),
     getFeaturedContributors(4),
     getNewsBites(6),
     getPublicSiteSettings(),
     getActiveEdition(),
     getHomeVideos(),
   ]);
+
+  // Galleries and video-only items have their own homepage slots (the photo band, the video panel); the story lists skip them.
+  const recent = recentAll.filter(isEditorialStory);
+  const gallery = edition ? await getEditionGallery(edition.id) : null;
 
   // Lead video: HR-style selection is data, not code. Once the featured-video
   // setting exists (proposed M4, not applied) its id is passed as the third
@@ -38,7 +46,13 @@ export default async function Home() {
   const rest = featured ? recent.filter((item) => item.id !== featured.id) : recent;
   const editionStories = edition ? rest.filter((item) => item.publicationId === edition.id) : [];
   const recentSidebar = (editionStories.length > 0 ? editionStories : rest).slice(0, 4);
-  const moreStories = rest.slice(4, 7);
+  // The active edition's stories, the lead first: this is the "From the <edition>" grid. Without an active edition (or
+  // without any story in it) the page keeps its classic lead-story layout.
+  const gridStories = edition
+    ? [featured, ...rest].filter((item): item is NonNullable<typeof item> => Boolean(item) && item?.publicationId === edition.id)
+    : [];
+  const showEditionGrid = Boolean(edition) && gridStories.length > 0;
+  const moreStories = rest.filter((item) => !gridStories.some((g) => g.id === item.id)).slice(0, 3);
 
   const pickedContributors = settings.featuredAuthorIds.length > 0 ? await getAuthorsByIds(settings.featuredAuthorIds) : [];
   const displayedContributors = pickedContributors.length > 0 ? pickedContributors : contributors;
@@ -53,6 +67,7 @@ export default async function Home() {
           duplicates there instead). A visually-hidden h1 gives screen
           readers/SEO the missing landmark with zero visual change. */}
       <h1 className="sr-only">{settings.siteTitle ?? "Springboard — PHD Nigeria's editorial platform"}</h1>
+      <NewsTicker items={recent.slice(0, 6)} />
       {videos.length > 0 ? (
         <section aria-label="Featured video and latest edition" className="mx-auto max-w-6xl px-gutter pt-8 pb-section-md md:pt-10">
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
@@ -75,7 +90,12 @@ export default async function Home() {
         </section>
       ) : null}
 
-      {featured ? (
+      {showEditionGrid && edition ? (
+        <>
+          <EditionGrid edition={edition} stories={gridStories} />
+          {gallery && <PhotoBand edition={edition} gallery={gallery} />}
+        </>
+      ) : featured ? (
         <section className="mx-auto max-w-6xl px-gutter pt-10 pb-section-lg md:pt-12">
           <div className="grid grid-cols-1 gap-14 lg:grid-cols-[1fr_360px]">
             <FeaturedStory content={featured} />

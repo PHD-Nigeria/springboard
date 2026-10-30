@@ -99,6 +99,7 @@ export function Navigation({ items }: { items: PublicNavItem[] }) {
           className="font-display text-xl font-semibold tracking-wide text-foreground transition-colors duration-fast hover:text-secondary-400"
           onClick={closeAll}
         >
+          <span aria-hidden="true" className="mr-2 inline-block h-3 w-3 bg-secondary-400 align-baseline" />
           SPRINGBOARD
         </Link>
 

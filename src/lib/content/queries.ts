@@ -798,7 +798,7 @@ export function editionCodeFromSlug(slug: string): string | null {
  * resolved through the same public RLS as every read here, so an unpublished
  * or deleted pick returns null and the homepage falls back to "most recent".
  */
-export async function getActiveEdition(): Promise<ActiveEdition | null> {
+export const getActiveEdition = cache(async (): Promise<ActiveEdition | null> => {
   const supabase = await createClient();
   const { data: settings, error: settingsError } = await supabase
     .from("site_settings")
@@ -834,7 +834,7 @@ export async function getActiveEdition(): Promise<ActiveEdition | null> {
     storyCount: count ?? 0,
     videoCount: videos.filter((v) => v.editionSlug === publication.slug).length,
   };
-}
+});
 
 export interface HomeVideo {
   videoId: string;
@@ -933,4 +933,64 @@ export function pickFeaturedVideo(videos: HomeVideo[], activeEditionSlug: string
     if (preferred) return preferred;
   }
   return videos.find((v) => activeEditionSlug && v.editionSlug === activeEditionSlug) ?? videos[0] ?? null;
+}
+
+export interface EditionGallery {
+  title: string;
+  /** The gallery item's own page, or null if it cannot be linked. */
+  href: string | null;
+  /** How many photographs the gallery holds in total (the band shows only the first few). */
+  total: number;
+  photos: { url: string; alt: string }[];
+}
+
+/**
+ * The published "Photos of the Quarter" gallery of an edition: its title, link, photo count and the first photographs, in
+ * the editors' order. Only PUBLIC Media Library images are returned (a private one is skipped, never signed or exposed),
+ * and the alt text is the one the editors entered. Null when the edition has no published gallery.
+ */
+export async function getEditionGallery(editionId: string, limit = 8): Promise<EditionGallery | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("content")
+    .select(RICH_CONTENT_SELECT)
+    .eq("publication_id", editionId)
+    .eq("content_type", "GALLERY")
+    .eq("status", "published")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .returns<RichContentRow[]>();
+  if (error) throw error;
+  const row = data?.[0];
+  if (!row) return null;
+  const content = mapRichContentRow(supabase, row);
+
+  const ids: string[] = [];
+  for (const block of content.body.blocks) if (block.type === "gallery") ids.push(...block.mediaIds);
+  if (ids.length === 0) return null;
+
+  const { data: media, error: mediaError } = await supabase.from("media").select("id, bucket, storage_path, alt_text").in("id", ids);
+  if (mediaError) throw mediaError;
+  const byId = new Map((media ?? []).filter((m) => m.bucket === "public").map((m) => [m.id, m]));
+  const photos = ids
+    .map((id) => byId.get(id))
+    .filter((m): m is NonNullable<typeof m> => Boolean(m))
+    .map((m) => ({ url: getPublicUrl(supabase, m.storage_path), alt: m.alt_text?.trim() || "" }));
+  if (photos.length === 0) return null;
+  return { title: content.title, href: content.href ?? null, total: photos.length, photos: photos.slice(0, limit) };
+}
+
+/** Published stories of an edition that belong to no section, newest first: the edition page shows them when it has no sections. */
+export async function getUnsectionedContentForPublication(publicationId: string): Promise<Content[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("content")
+    .select(RICH_CONTENT_SELECT)
+    .eq("publication_id", publicationId)
+    .is("section_id", null)
+    .eq("status", "published")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .returns<RichContentRow[]>();
+  if (error) throw error;
+  return (data ?? []).map((row) => mapRichContentRow(supabase, row));
 }

@@ -35,3 +35,74 @@
 .home-theme .home-bg-deep {
   background-color: #24005a;
 }
+
+/* ---- News bites ticker (under the masthead) ---- */
+.home-ticker {
+  display: flex;
+  align-items: stretch;
+  background: #24005a;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.home-ticker-label {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin: 8px 12px;
+  padding: 2px 10px;
+  background: #9fea47;
+  color: #24005a;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.home-ticker-viewport {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.home-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: home-ticker-scroll 70s linear infinite;
+}
+.home-ticker:hover .home-ticker-track,
+.home-ticker:focus-within .home-ticker-track {
+  animation-play-state: paused;
+}
+.home-ticker-row {
+  display: flex;
+  flex: none;
+  gap: 40px;
+  padding: 0 20px;
+  margin: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+.home-ticker-row a {
+  color: #ffffff;
+  font-size: 14px;
+  text-decoration: none;
+}
+.home-ticker-row a:hover {
+  text-decoration: underline;
+}
+.home-ticker-date {
+  margin-right: 8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+@keyframes home-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-ticker-viewport { overflow-x: auto; }
+  .home-ticker-track { animation: none; }
+  .home-ticker-row[aria-hidden="true"] { display: none; }
+}
+.home-ticker :focus-visible {
+  outline-color: #9fea47;
+}
