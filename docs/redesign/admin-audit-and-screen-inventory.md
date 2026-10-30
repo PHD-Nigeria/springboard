@@ -132,4 +132,4 @@ Not done: the rest of the homepage below the hero still uses the existing dark-s
 
 Verified (run, output seen): `tsc --noEmit` clean, eslint clean, `next build` succeeds (throwaway copy, local font), `checks/verify-home-featured-video.cjs` 76/76 against the dev server on the fictional-data mock at 1440/1024/768/390 (HR 16:9; Dare and CJ 9:16 at most 530px and 72% of viewport height; no overflow; keyboard play; player host only youtube-nocookie.com after click). Not verified: real thumbnails or playback (sandbox cannot reach YouTube), real Supabase/RLS, Safari/Firefox, screen readers.
 
-Q3 content and photos: `docs/redesign/q3-2026-seed/` (manifest + 16 renamed photos), not applied anywhere.
+Q3 content and photos: held in private storage, not in this repository (see `docs/redesign/q3-2026-seed/README.md` for the structure and the draft-only loading rules); not applied anywhere.

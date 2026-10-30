@@ -47,3 +47,8 @@ next-env.d.ts
 # local source photographs and converted copies — never commit
 /assets/
 /assets-converted/
+
+# Q3 seed source material: staff photographs and unpublished newsletter text. Kept in private storage,
+# never in this public repository (see docs/redesign/q3-2026-seed/README.md).
+/docs/redesign/q3-2026-seed/photos/
+/docs/redesign/q3-2026-seed/q3-2026.json
