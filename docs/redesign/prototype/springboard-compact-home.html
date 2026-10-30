@@ -270,7 +270,7 @@ footer a:hover{text-decoration:underline}
 <body>
 <a class="skip" href="#main">Skip to main content</a>
 
-<div class="proto-note" role="region" aria-label="Prototype notice"><div class="wrap"><b>Review prototype</b><span>Compact homepage. All stories, names and counts are fictional. Grey boxes are labelled image placeholders, not photography. Videos are the three supplied YouTube ids; their titles, captions and quarter are placeholders; thumbnails load from YouTube.</span></div></div>
+<div class="proto-note" role="region" aria-label="Prototype notice"><div class="wrap"><b>Review prototype</b><span>Compact homepage. All stories, names and counts are fictional. Grey boxes are labelled image placeholders, not photography. Videos are the three supplied YouTube ids; their titles, captions and quarter are placeholders; no YouTube image is loaded before play, so the poster is a neutral branded panel.</span></div></div>
 
 <div class="util on-purple" role="region" aria-label="Edition and date"><div class="wrap">
   <span><b>Latest edition</b> · <a href="#archive" data-edition="2026-Q3">2026 Q3 (Jul–Sep)</a></span>
@@ -560,18 +560,16 @@ const VIDEOS=[
 ].filter(v=>ID_RE.test(v.videoId));
 $('edCounts').textContent=`${q3.length} items · 1 gallery · ${VIDEOS.length} videos`;
 const vf=$('featuredVideo'),vfStage=$('vfStage');
-const thumbUrl=v=>v.thumbnail||`https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;
+const thumbUrl=v=>v.thumbnail||''; /* editor-chosen Media Library image only; no YouTube image is ever fetched before play */
 const PLAY='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>';
 let current=null;
 function setVideo(v,focusList){
   if(!v||!ID_RE.test(v.videoId||''))return false;
   current=v;
   vf.dataset.videoId=v.videoId;vf.dataset.orientation=v.orientation==='portrait'?'portrait':'landscape';vf.dataset.ready='true';
-  vfStage.innerHTML=`<div class="poster noimg" id="vfPoster"><img id="vfThumb" alt="" referrerpolicy="no-referrer" src="${thumbUrl(v)}"><button class="play" id="vfPlay" type="button" aria-label="Play video: ${esc(v.title)}">${PLAY}</button><div class="ptitle" aria-hidden="true">${esc(v.title)}</div></div>`;
+  vfStage.innerHTML=`<div class="poster noimg" id="vfPoster">${thumbUrl(v)?`<img id="vfThumb" alt="" src="${esc(thumbUrl(v))}">`:''}<button class="play" id="vfPlay" type="button" aria-label="Play video: ${esc(v.title)}">${PLAY}</button><div class="ptitle" aria-hidden="true">${esc(v.title)}</div></div>`;
   const img=vfStage.querySelector('#vfThumb');
-  const poster=img.parentElement;
-  img.addEventListener('load',()=>poster.classList.remove('noimg'));
-  img.addEventListener('error',()=>img.remove());
+  if(img){const poster=img.parentElement;img.addEventListener('load',()=>poster.classList.remove('noimg'));img.addEventListener('error',()=>img.remove());}
   vfStage.querySelector('#vfPlay').addEventListener('click',()=>{
     const f=document.createElement('iframe');
     f.src=`https://www.youtube-nocookie.com/embed/${v.videoId}?autoplay=1&rel=0&playsinline=1&modestbranding=1`;
@@ -588,7 +586,7 @@ function setVideo(v,focusList){
   return true;
 }
 const vfList=$('vfList');
-vfList.innerHTML=VIDEOS.map(v=>`<li><button type="button" data-id="${v.videoId}" aria-pressed="false"><img alt="" referrerpolicy="no-referrer" src="${thumbUrl(v)}" onerror="this.remove()"><span><b>${esc(v.title)}</b><span class="o">${v.orientation==='portrait'?'Vertical':'Landscape'}</span></span></button></li>`).join('');
+vfList.innerHTML=VIDEOS.map(v=>`<li><button type="button" data-id="${v.videoId}" aria-pressed="false">${thumbUrl(v)?`<img alt="" src="${esc(thumbUrl(v))}" onerror="this.remove()">`:''}<span><b>${esc(v.title)}</b><span class="o">${v.orientation==='portrait'?'Vertical':'Landscape'}</span></span></button></li>`).join('');
 vfList.addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(!b)return;const v=VIDEOS.find(x=>x.videoId===b.dataset.id);if(v&&(!current||v.videoId!==current.videoId))setVideo(v,true)});
 window.setVideo=setVideo;window.VIDEOS=VIDEOS;
 setVideo(VIDEOS[0]); /* HR is the initial featured video */

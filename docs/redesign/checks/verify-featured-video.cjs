@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- standalone Node check script, not application code */
 /*
  * Responsive checks for the featured-video component in the homepage prototype
- * (HR landscape, Dare and CJ portrait). Fully offline: every request to
- * i.ytimg.com / youtube-nocookie.com is intercepted and answered locally, so
- * nothing contacts YouTube and nothing real is loaded. The stubbed thumbnail is
- * a labelled 4:3 SVG, so these checks prove layout and behaviour, NOT how the
- * real YouTube thumbnails look (that needs visual review with network access).
+ * (HR landscape, Dare and CJ portrait). Fully offline: every request to a
+ * YouTube / Google host is intercepted and answered locally, so nothing contacts YouTube.
+ * The page must make NO such request until a visitor presses play (the poster is a neutral
+ * branded panel, never a YouTube image). These checks prove layout and behaviour only.
  *   node verify-featured-video.cjs   (needs global `playwright`)
  */
 const { chromium } = require('playwright');
@@ -52,7 +51,7 @@ const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360"><r
     ok(`${tag} HR stage is 16:9`, s.o === 'landscape' && Math.abs(s.ratio - 16 / 9) < 0.02, `ratio ${s.ratio.toFixed(3)}`);
     ok(`${tag} no horizontal overflow (landscape)`, !s.overflowX && s.fits);
     ok(`${tag} play control named and at least 44px`, !!s.playBox && /Play video: HR/.test(s.playBox.label) && s.playBox.w >= 44 && s.playBox.h >= 44, JSON.stringify(s.playBox));
-    ok(`${tag} thumbnail requested from i.ytimg.com only, no player host before click`, hits.some(u => u.includes('i.ytimg.com/vi/hIW7FrWtcHE/')) && !hits.some(u => u.includes('youtube-nocookie')));
+    ok(`${tag} NO request to YouTube or Google before the visitor presses play`, hits.length === 0, hits.join(', '));
 
     // 2. Portrait videos keep 9:16 and fit the viewport width
     for (const [name, id] of [['Dare', 'jkEu3O_fX94'], ['CJ', 'V4g-MVnRom8']]) {
@@ -76,7 +75,7 @@ const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360"><r
     await page.waitForSelector('#vfStage iframe');
     const src = await page.$eval('#vfStage iframe', f => ({ src: f.src, title: f.title, sandboxless: !f.hasAttribute('sandbox') }));
     ok(`${tag} Enter on play mounts youtube-nocookie iframe for HR`, src.src.startsWith('https://www.youtube-nocookie.com/embed/hIW7FrWtcHE?') && src.title === 'HR', src.src);
-    ok(`${tag} player host is only youtube-nocookie.com after click`, hits.filter(u => !u.includes('ytimg.com')).every(u => u.startsWith('https://www.youtube-nocookie.com/embed/')));
+    ok(`${tag} after the click the only external host is the youtube-nocookie.com embed`, hits.length > 0 && hits.every(u => u.startsWith('https://www.youtube-nocookie.com/embed/')));
 
     // 5. Switching video after play replaces the player with the new poster
     await page.click('#vfList button[data-id="jkEu3O_fX94"]');

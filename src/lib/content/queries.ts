@@ -848,6 +848,11 @@ export interface HomeVideo {
   editionSlug: string | null;
   editionTitle: string | null;
   editionCode: string | null;
+  /**
+   * A PUBLIC Media Library image the editor chose as this video's thumbnail, or null (the page then shows a neutral branded
+   * fallback). Never a YouTube image: nothing may be fetched from YouTube/Google before a visitor chooses to play.
+   */
+  thumbnailUrl: string | null;
 }
 
 /**
@@ -872,6 +877,7 @@ export async function getHomeVideos(limit = 24): Promise<HomeVideo[]> {
 
   const seen = new Set<string>();
   const videos: HomeVideo[] = [];
+  const thumbnailIds = new Map<string, string>(); // video id -> chosen thumbnail media id
   for (const row of data ?? []) {
     const content = mapRichContentRow(supabase, row);
     const publication = row.content_publication;
@@ -881,6 +887,7 @@ export async function getHomeVideos(limit = 24): Promise<HomeVideo[]> {
       const videoId = isValidYouTubeId(block.videoId) ? block.videoId : (fromUrl?.videoId ?? null);
       if (!videoId || seen.has(videoId)) continue;
       seen.add(videoId);
+      if (block.thumbnailMediaId) thumbnailIds.set(videoId, block.thumbnailMediaId);
       videos.push({
         videoId,
         title: block.title?.trim() || content.title,
@@ -892,8 +899,19 @@ export async function getHomeVideos(limit = 24): Promise<HomeVideo[]> {
         editionSlug: publication?.slug ?? null,
         editionTitle: publication?.title ?? null,
         editionCode: publication ? editionCodeFromSlug(publication.slug) : null,
+        thumbnailUrl: null,
       });
     }
+  }
+
+  // Resolve the editors' chosen thumbnails in one query. Only PUBLIC media can be shown: a private (or missing) image
+  // simply leaves thumbnailUrl null and the page uses the neutral branded fallback.
+  const mediaIds = [...new Set(thumbnailIds.values())];
+  if (mediaIds.length > 0) {
+    const { data: media, error: mediaError } = await supabase.from("media").select("id, bucket, storage_path").in("id", mediaIds);
+    if (mediaError) throw mediaError;
+    const urlById = new Map((media ?? []).filter((m) => m.bucket === "public").map((m) => [m.id, getPublicUrl(supabase, m.storage_path)]));
+    for (const video of videos) video.thumbnailUrl = urlById.get(thumbnailIds.get(video.videoId) ?? "") ?? null;
   }
   return videos;
 }

@@ -12,8 +12,8 @@ interface YouTubeEmbedProps {
   orientation: "landscape" | "portrait";
   /** Narrower vertical player (about 296px wide, under 72% of the viewport height) for dense layouts like the homepage. */
   compact?: boolean;
-  /** Default: a public Media Library image chosen by the editor, so nothing contacts YouTube before play. A caller may opt in to YouTube's own poster with `external` (the homepage does; that contacts Google when the image loads). */
-  thumbnail?: { url: string; alt?: string; /** True for a third-party image (YouTube's poster): rendered as a plain <img> with no referrer, never through next/image. */ external?: boolean };
+  /** A public Media Library image chosen by the editor. Nothing is ever fetched from YouTube/Google before the visitor chooses to play, so there is deliberately no way to pass a YouTube image here. */
+  thumbnail?: { url: string; alt?: string };
 }
 
 /**
@@ -68,16 +68,7 @@ export function YouTubeEmbed({ videoId, title, caption, orientation, thumbnail, 
             aria-label={`Play video: ${title}`}
             className="group absolute inset-0 flex h-full w-full items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-secondary-400"
           >
-            {thumbnail?.external ? (
-              // eslint-disable-next-line @next/next/no-img-element -- deliberately not next/image: third-party poster, fetched by the visitor's browser with no referrer
-              <img
-                src={thumbnail.url}
-                alt={thumbnail.alt ?? ""}
-                referrerPolicy="no-referrer"
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            ) : thumbnail ? (
+            {thumbnail ? (
               <Image
                 src={thumbnail.url}
                 unoptimized={isSignedStorageUrl(thumbnail.url)}
