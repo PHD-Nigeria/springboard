@@ -14,8 +14,19 @@
   --color-foreground-muted: #52466b;
   --color-border: #cfc6e0;
   --color-border-strong: #8e83a6;
-  --color-taxonomy-1: #3a008c;
-  --color-taxonomy-2: #52466b;
+  /*
+   * Taxonomy label colours for LIGHT surfaces. The brand taxonomy colours (coral, lavender, pink, lime) were chosen for
+   * the dark site and score only 1.1-2.3:1 on these backgrounds, so label text such as a category name failed WCAG AA
+   * (4.5:1). Each variant below keeps its hue and saturation and only lowers lightness until it reaches >= 4.6:1 on the
+   * darkest light surface (--color-surface-raised, #e6e0f2); ratios on #ffffff / #f0ecf6 / #e6e0f2 are in brackets.
+   * Scoped to .home-theme: the brand tokens themselves, and every dark page, are unchanged.
+   * scripts/test-taxonomy-contrast.mjs fails if any of these ever drops below 4.5:1.
+   */
+  --color-taxonomy-1: #3a008c; /* [13.47 / 11.57 / 10.46] */
+  --color-taxonomy-2: #52466b; /* [8.58 / 7.37 / 6.66] */
+  --color-taxonomy-3: #cb0000; /* coral    #ff7373 [5.93 / 5.10 / 4.61] */
+  --color-taxonomy-4: #5f39ff; /* lavender #9b83ff [5.97 / 5.13 / 4.64] */
+  --color-taxonomy-5: #b600a6; /* pink     #ff70f2 [5.93 / 5.09 / 4.61] */
 }
 .home-theme :focus-visible {
   outline: 2px solid #3a008c;

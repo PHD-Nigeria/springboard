@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:youtube": "node scripts/test-youtube-url.mjs",
     "test:visibility": "node scripts/test-edition-visibility.mjs",
-    "test:visibility:integration": "node scripts/test-public-visibility.mjs"
+    "test:visibility:integration": "node scripts/test-public-visibility.mjs",
+    "test:contrast": "node scripts/test-taxonomy-contrast.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
