@@ -10,8 +10,10 @@ interface YouTubeEmbedProps {
   title: string;
   caption?: string;
   orientation: "landscape" | "portrait";
-  /** A public Media Library image chosen by the editor. Deliberately never YouTube's own thumbnail: that would contact Google before the visitor chose to play. */
-  thumbnail?: { url: string; alt?: string };
+  /** Narrower vertical player (about 296px wide, under 72% of the viewport height) for dense layouts like the homepage. */
+  compact?: boolean;
+  /** Default: a public Media Library image chosen by the editor, so nothing contacts YouTube before play. A caller may opt in to YouTube's own poster with `external` (the homepage does; that contacts Google when the image loads). */
+  thumbnail?: { url: string; alt?: string; /** True for a third-party image (YouTube's poster): rendered as a plain <img> with no referrer, never through next/image. */ external?: boolean };
 }
 
 /**
@@ -24,7 +26,7 @@ interface YouTubeEmbedProps {
  * stays visible so a deleted/private/embedding-disabled video still leads
  * somewhere useful instead of leaving a dead player.
  */
-export function YouTubeEmbed({ videoId, title, caption, orientation, thumbnail }: YouTubeEmbedProps) {
+export function YouTubeEmbed({ videoId, title, caption, orientation, thumbnail, compact }: YouTubeEmbedProps) {
   const [playing, setPlaying] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -38,7 +40,15 @@ export function YouTubeEmbed({ videoId, title, caption, orientation, thumbnail }
   if (!embedSrc || !watchHref) return null;
 
   return (
-    <figure className={portrait ? "mx-auto w-full max-w-[min(22.5rem,calc(80svh*9/16))]" : "w-full"}>
+    <figure
+      className={
+        portrait
+          ? compact
+            ? "mx-auto w-full max-w-[min(18.5rem,calc(72svh*9/16))]"
+            : "mx-auto w-full max-w-[min(22.5rem,calc(80svh*9/16))]"
+          : "w-full"
+      }
+    >
       <div className={`relative overflow-hidden bg-primary-900 ${portrait ? "aspect-[9/16]" : "aspect-video"}`}>
         {playing ? (
           <iframe
@@ -58,7 +68,16 @@ export function YouTubeEmbed({ videoId, title, caption, orientation, thumbnail }
             aria-label={`Play video: ${title}`}
             className="group absolute inset-0 flex h-full w-full items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-secondary-400"
           >
-            {thumbnail ? (
+            {thumbnail?.external ? (
+              // eslint-disable-next-line @next/next/no-img-element -- deliberately not next/image: third-party poster, fetched by the visitor's browser with no referrer
+              <img
+                src={thumbnail.url}
+                alt={thumbnail.alt ?? ""}
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : thumbnail ? (
               <Image
                 src={thumbnail.url}
                 unoptimized={isSignedStorageUrl(thumbnail.url)}
@@ -83,7 +102,7 @@ export function YouTubeEmbed({ videoId, title, caption, orientation, thumbnail }
           </button>
         )}
       </div>
-      <figcaption className="mt-2 font-body text-sm text-foreground-muted">
+      <figcaption className={`mt-2 font-body text-sm text-foreground-muted ${compact ? "px-4" : ""}`}>
         {caption ? <span className="block">{caption}</span> : null}
         <a href={watchHref} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">
           Watch on YouTube

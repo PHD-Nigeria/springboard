@@ -5,6 +5,7 @@ import type { Content, Author } from "@/content-types/types";
 import { safeParseBodyDocument, createEmptyBodyDocument } from "@/content-types/blocks";
 import { getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
 import { getAdminSession } from "@/lib/auth/session";
+import { isValidYouTubeId, parseYouTubeUrl } from "@/lib/video/youtube";
 
 type ContentRow = Database["public"]["Tables"]["content"]["Row"];
 type PublicationRow = Database["public"]["Tables"]["publications"]["Row"];
@@ -739,4 +740,137 @@ export async function getPublicNavItems(): Promise<PublicNavItem[]> {
     const children = rows.filter((child) => child.parent_id === row.id).map(toItem);
     return children.length > 0 ? { ...toItem(row), children } : toItem(row);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Homepage: active edition and featured videos
+// ---------------------------------------------------------------------------
+
+export interface ActiveEdition {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  /** "2026 Q3" when the slug follows the YYYY-qN convention, else null. Until the quarter columns are approved, the slug is the only structured hint. */
+  code: string | null;
+  storyCount: number;
+  videoCount: number;
+}
+
+export function editionCodeFromSlug(slug: string): string | null {
+  const match = /^(\d{4})-q([1-4])$/i.exec(slug);
+  return match ? `${match[1]} Q${match[2]}` : null;
+}
+
+/**
+ * The edition the CMS has made active (site_settings.default_publication_id),
+ * resolved through the same public RLS as every read here, so an unpublished
+ * or deleted pick returns null and the homepage falls back to "most recent".
+ */
+export async function getActiveEdition(): Promise<ActiveEdition | null> {
+  const supabase = await createClient();
+  const { data: settings, error: settingsError } = await supabase
+    .from("site_settings")
+    .select("default_publication_id")
+    .eq("id", true)
+    .maybeSingle()
+    .returns<{ default_publication_id: string | null } | null>();
+  if (settingsError) throw settingsError;
+
+  let query = supabase.from("publications").select("id, slug, title, subtitle");
+  query = settings?.default_publication_id
+    ? query.eq("id", settings.default_publication_id)
+    : query.order("published_at", { ascending: false, nullsFirst: false }).limit(1);
+  const { data, error } = await query.returns<{ id: string; slug: string; title: string; subtitle: string | null }[]>();
+  if (error) throw error;
+  const publication = data?.[0];
+  if (!publication) return null;
+
+  const { count, error: countError } = await supabase
+    .from("content")
+    .select("id", { count: "exact", head: true })
+    .eq("publication_id", publication.id);
+  if (countError) throw countError;
+
+  const videos = await getHomeVideos();
+  return {
+    ...publication,
+    code: editionCodeFromSlug(publication.slug),
+    storyCount: count ?? 0,
+    videoCount: videos.filter((v) => v.editionSlug === publication.slug).length,
+  };
+}
+
+export interface HomeVideo {
+  videoId: string;
+  title: string;
+  caption: string | null;
+  orientation: "landscape" | "portrait";
+  /** The story that contains this video block. Its edition is the video's edition. */
+  contentId: string;
+  contentTitle: string;
+  contentHref: string | null;
+  editionSlug: string | null;
+  editionTitle: string | null;
+  editionCode: string | null;
+}
+
+/**
+ * Every playable video in published stories, newest first. Videos are Video
+ * blocks inside story bodies (there is no video table), so a video's quarter
+ * is its story's edition, and older editions keep their videos when a new
+ * quarter becomes active: nothing here reads or writes the active-edition
+ * setting. Ids are re-validated, and a legacy `externalUrl` is only honoured
+ * if it parses as a supported YouTube link; anything else is skipped.
+ */
+export async function getHomeVideos(limit = 24): Promise<HomeVideo[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("content")
+    .select(`${RICH_CONTENT_SELECT.replace("content_publication:publication_id ( slug )", "content_publication:publication_id ( slug, title )")}`)
+    .contains("body", { blocks: [{ type: "video" }] })
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(limit)
+    .returns<(RichContentRow & { content_publication: { slug: string; title: string } | null })[]>();
+  if (error) throw error;
+
+  const seen = new Set<string>();
+  const videos: HomeVideo[] = [];
+  for (const row of data ?? []) {
+    const content = mapRichContentRow(supabase, row);
+    const publication = row.content_publication;
+    for (const block of content.body.blocks) {
+      if (block.type !== "video") continue;
+      const fromUrl = !block.videoId && block.externalUrl ? parseYouTubeUrl(block.externalUrl) : null;
+      const videoId = isValidYouTubeId(block.videoId) ? block.videoId : (fromUrl?.videoId ?? null);
+      if (!videoId || seen.has(videoId)) continue;
+      seen.add(videoId);
+      videos.push({
+        videoId,
+        title: block.title?.trim() || content.title,
+        caption: block.caption?.trim() || null,
+        orientation: block.orientation ?? (fromUrl?.isShort ? "portrait" : "landscape"),
+        contentId: content.id,
+        contentTitle: content.title,
+        contentHref: content.href ?? null,
+        editionSlug: publication?.slug ?? null,
+        editionTitle: publication?.title ?? null,
+        editionCode: publication ? editionCodeFromSlug(publication.slug) : null,
+      });
+    }
+  }
+  return videos;
+}
+
+/**
+ * Which video leads. A preferred id (the admin's pick, once the featured-video
+ * setting is approved and stored) wins only if it is still in the published
+ * list; otherwise the newest video in the active edition, then the newest overall.
+ */
+export function pickFeaturedVideo(videos: HomeVideo[], activeEditionSlug: string | null, preferredId?: string | null): HomeVideo | null {
+  if (preferredId) {
+    const preferred = videos.find((v) => v.videoId === preferredId);
+    if (preferred) return preferred;
+  }
+  return videos.find((v) => activeEditionSlug && v.editionSlug === activeEditionSlug) ?? videos[0] ?? null;
 }

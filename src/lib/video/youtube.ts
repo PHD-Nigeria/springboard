@@ -109,3 +109,14 @@ export function youTubeWatchUrl(videoId: string, isShort = false): string | null
   if (!isValidYouTubeId(videoId)) return null;
   return isShort ? `https://www.youtube.com/shorts/${videoId}` : `https://www.youtube.com/watch?v=${videoId}`;
 }
+
+/**
+ * YouTube's own poster image, built only from a validated id against one
+ * fixed host. Using it means the visitor's browser contacts Google as soon as
+ * the thumbnail loads (before any play click) — callers must opt in
+ * deliberately; the article Video block does not. Returns null if the id is not valid.
+ */
+export function youTubeThumbnailUrl(videoId: string): string | null {
+  if (!isValidYouTubeId(videoId)) return null;
+  return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+}

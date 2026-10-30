@@ -123,3 +123,13 @@ Data model (no new table): a video is a Video block inside a story; its quarter 
 Privacy decision needed: the existing `YouTubeEmbed` deliberately never loads YouTube's own thumbnail (it would contact Google before the visitor chooses to play), and uses an editor-chosen Media Library image instead. The request asks for YouTube thumbnails, so the prototype loads `i.ytimg.com/vi/<id>/hqdefault.jpg` with `referrerpolicy=no-referrer`. Alternatives: staff cache each thumbnail into the Media Library once (upload, so not done here), which keeps the current no-contact behaviour. Also, `hqdefault` is 4:3 and will look low-resolution cropped to 9:16.
 
 Checks: `checks/verify-featured-video.cjs`, 76 assertions at 1440/1024/768/390, all passing, fully offline (YouTube hosts intercepted). They prove ratios, no overflow, selector state, keyboard activation and player host. They do NOT show real thumbnails or real playback: this sandbox cannot reach YouTube, so real titles, thumbnails, embeddability and orientation were not checked.
+
+## 11. Real homepage (replaces the HTML prototype)
+
+`src/app/page.tsx` now renders the compact homepage from CMS data: `FeaturedVideoPanel` (reuses `YouTubeEmbed`; 16:9 or compact 9:16; YouTube poster with no referrer; `youtube-nocookie.com` player only on click; selectable videos) beside `EditionPanel` (active edition, counts, newest stories). Data: `getActiveEdition`, `getHomeVideos`, `pickFeaturedVideo` in `lib/content/queries.ts`, all through public RLS, no new tables and no schema change. A video's quarter is its story's edition; switching the active edition leaves older videos in place. The lead video is the newest in the active edition until M4 (not applied) stores an admin pick; `pickFeaturedVideo` already accepts that id. Scoped light theme in `components/home/home-theme.css`; other public pages are unchanged.
+
+Not done: the rest of the homepage below the hero still uses the existing dark-site templates re-coloured (large lead story and banner), so it is not yet compact; archive filters; other public templates; admin featured-video control (needs M4).
+
+Verified (run, output seen): `tsc --noEmit` clean, eslint clean, `next build` succeeds (throwaway copy, local font), `checks/verify-home-featured-video.cjs` 76/76 against the dev server on the fictional-data mock at 1440/1024/768/390 (HR 16:9; Dare and CJ 9:16 at most 530px and 72% of viewport height; no overflow; keyboard play; player host only youtube-nocookie.com after click). Not verified: real thumbnails or playback (sandbox cannot reach YouTube), real Supabase/RLS, Safari/Firefox, screen readers.
+
+Q3 content and photos: `docs/redesign/q3-2026-seed/` (manifest + 16 renamed photos), not applied anywhere.

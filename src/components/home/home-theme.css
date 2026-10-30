@@ -1,0 +1,26 @@
+/*
+ * Homepage theme. The public site is dark; the compact editorial homepage sits
+ * on lavender-tinted neutrals between the purple masthead and footer. Only
+ * token values are overridden, scoped to `.home-theme`, so every other public
+ * page is unchanged and existing utilities (bg-surface, text-foreground ...)
+ * resolve to these on the homepage. Same values as the approved prototype.
+ */
+.home-theme {
+  color-scheme: light;
+  --color-background: #f0ecf6;
+  --color-surface: #ffffff;
+  --color-surface-raised: #e6e0f2;
+  --color-foreground: #1a0b3b;
+  --color-foreground-muted: #52466b;
+  --color-border: #cfc6e0;
+  --color-border-strong: #8e83a6;
+  --color-taxonomy-1: #3a008c;
+  --color-taxonomy-2: #52466b;
+}
+.home-theme :focus-visible {
+  outline: 2px solid #3a008c;
+  outline-offset: 2px;
+}
+.home-theme .home-bg-deep {
+  background-color: #24005a;
+}
