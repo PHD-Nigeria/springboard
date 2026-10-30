@@ -17,7 +17,7 @@ function Card({ content, lead, priority }: { content: Content; lead: boolean; pr
             fill
             priority={priority}
             sizes={lead ? "(min-width: 768px) 66vw, 100vw" : "(min-width: 768px) 33vw, 100vw"}
-            className="object-cover transition-transform duration-base ease-out group-hover:scale-[1.02]"
+            className="object-cover object-[50%_25%] transition-transform duration-base ease-out group-hover:scale-[1.02]"
           />
         ) : (
           <MediaFallback seed={content.id} />

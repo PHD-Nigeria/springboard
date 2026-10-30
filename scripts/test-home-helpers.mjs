@@ -34,3 +34,12 @@ test("dates are shown in Lagos time", () => {
   assert.equal(formatTickerDate(null), "");
   assert.equal(formatLongDate(new Date("2026-10-29T09:00:00Z")), "Thursday 29 October 2026");
 });
+
+import { publicStatusOrFilter } from "../src/lib/content/visibility.ts";
+test("the public status filter admits published, and scheduled items only once due", () => {
+  assert.equal(
+    publicStatusOrFilter(new Date("2026-10-30T12:00:00.000Z")),
+    "status.eq.published,and(status.eq.scheduled,publish_at.lte.2026-10-30T12:00:00.000Z)",
+  );
+  assert.ok(!/draft|archived|review/.test(publicStatusOrFilter()));
+});

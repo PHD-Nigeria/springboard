@@ -37,3 +37,12 @@ export function publicEditionOrFilter(visibleEditionIds: readonly string[]): str
   const ids = visibleEditionIds.filter((id) => UUID.test(id));
   return ids.length > 0 ? `publication_id.is.null,publication_id.in.(${ids.join(",")})` : "publication_id.is.null";
 }
+
+/**
+ * PostgREST `or` filter for the stories a visitor may see: published, or scheduled and already due. Row-level security
+ * already decides this for visitors; the public LISTS also apply it explicitly so that a signed-in staff member (who may
+ * read drafts and archived items through RLS) sees on the public homepage exactly what a visitor sees.
+ */
+export function publicStatusOrFilter(now: Date = new Date()): string {
+  return `status.eq.published,and(status.eq.scheduled,publish_at.lte.${now.toISOString()})`;
+}

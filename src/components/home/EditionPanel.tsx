@@ -16,7 +16,9 @@ export function EditionPanel({ edition, stories }: { edition: ActiveEdition; sto
           {edition.title}
         </h2>
         <p className="mt-1 font-body text-sm text-foreground-muted">
-          {edition.storyCount} {edition.storyCount === 1 ? "item" : "items"} · {edition.videoCount} {edition.videoCount === 1 ? "video" : "videos"}
+          {edition.storyCount} {edition.storyCount === 1 ? "item" : "items"}
+          {edition.galleryCount > 0 && ` · ${edition.galleryCount} ${edition.galleryCount === 1 ? "gallery" : "galleries"}`}
+          {` · ${edition.videoCount} ${edition.videoCount === 1 ? "video" : "videos"}`}
         </p>
         <Link
           href={`/issues/${edition.slug}`}

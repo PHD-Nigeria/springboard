@@ -6,7 +6,8 @@ import { safeParseBodyDocument, createEmptyBodyDocument } from "@/content-types/
 import { getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
 import { getAdminSession } from "@/lib/auth/session";
 import { cache } from "react";
-import { isEditionPubliclyVisible, publicEditionOrFilter } from "@/lib/content/visibility";
+import { isEditionPubliclyVisible, publicEditionOrFilter, publicStatusOrFilter } from "@/lib/content/visibility";
+import { isEditorialStory } from "@/lib/content/home-helpers";
 import { isValidYouTubeId, parseYouTubeUrl } from "@/lib/video/youtube";
 
 type ContentRow = Database["public"]["Tables"]["content"]["Row"];
@@ -329,6 +330,7 @@ export async function getRecentContent(limit: number): Promise<Content[]> {
     .from("content")
     .select(RICH_CONTENT_SELECT)
     .or(await publicEditionFilter())
+    .or(publicStatusOrFilter())
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit)
     .returns<RichContentRow[]>();
@@ -785,6 +787,7 @@ export interface ActiveEdition {
   /** "2026 Q3" when the slug follows the YYYY-qN convention, else null. Until the quarter columns are approved, the slug is the only structured hint. */
   code: string | null;
   storyCount: number;
+  galleryCount: number;
   videoCount: number;
 }
 
@@ -818,11 +821,20 @@ export const getActiveEdition = cache(async (): Promise<ActiveEdition | null> =>
   // A draft (or not-yet-due) edition is never the public "active edition", whoever is looking.
   if (!publication || !isEditionPubliclyVisible(publication)) return null;
 
-  const { count, error: countError } = await supabase
+  // Count what a reader would call items: stories, not the gallery or an item that only holds videos (those are counted apart).
+  const { data: inEdition, error: countError } = await supabase
     .from("content")
-    .select("id", { count: "exact", head: true })
-    .eq("publication_id", publication.id);
+    .select("id, content_type, body")
+    .eq("publication_id", publication.id)
+    .or(publicStatusOrFilter())
+    .returns<{ id: string; content_type: Content["contentType"]; body: unknown }[]>();
   if (countError) throw countError;
+  const counted = (inEdition ?? []).map((row) => {
+    const parsed = safeParseBodyDocument(row.body);
+    return { contentType: row.content_type, body: parsed.success ? parsed.data : createEmptyBodyDocument() };
+  });
+  const storyCount = counted.filter(isEditorialStory).length;
+  const galleryCount = counted.filter((item) => item.contentType === "GALLERY").length;
 
   const videos = await getHomeVideos();
   return {
@@ -831,7 +843,8 @@ export const getActiveEdition = cache(async (): Promise<ActiveEdition | null> =>
     title: publication.title,
     subtitle: publication.subtitle,
     code: editionCodeFromSlug(publication.slug),
-    storyCount: count ?? 0,
+    storyCount,
+    galleryCount,
     videoCount: videos.filter((v) => v.editionSlug === publication.slug).length,
   };
 });
