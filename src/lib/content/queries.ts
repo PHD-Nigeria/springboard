@@ -863,7 +863,13 @@ export interface HomeVideo {
  * setting. Ids are re-validated, and a legacy `externalUrl` is only honoured
  * if it parses as a supported YouTube link; anything else is skipped.
  */
-export async function getHomeVideos(limit = 24): Promise<HomeVideo[]> {
+/**
+ * Memoised per request with React's cache(): the homepage needs this list twice (the video panel, and the active edition's
+ * video count), and every other caller in the same render reuses one result instead of re-querying and re-processing the
+ * rows. (Next.js already de-duplicates the identical GET at the network layer; this makes the saving explicit and independent
+ * of that framework behaviour.)
+ */
+export const getHomeVideos = cache(async (limit = 24): Promise<HomeVideo[]> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("content")
@@ -914,7 +920,7 @@ export async function getHomeVideos(limit = 24): Promise<HomeVideo[]> {
     for (const video of videos) video.thumbnailUrl = urlById.get(thumbnailIds.get(video.videoId) ?? "") ?? null;
   }
   return videos;
-}
+});
 
 /**
  * Which video leads. A preferred id (the admin's pick, once the featured-video

@@ -248,7 +248,7 @@ footer a:hover{text-decoration:underline}
   .drop a{padding:10px calc(var(--gutter) + 12px);border-color:rgba(255,255,255,.12)}
   .drop a:hover{background:rgba(255,255,255,.08)}
   .mast .wrap{gap:8px}
-  .util .hide-s{display:none}
+  .util .hide-s,.mast .tools .hide-s{display:none} /* the Search link keeps its aria-label; hiding its text label stops the masthead overflowing at 390px and narrower */
   .video-feature .cap h3{font-size:19px}
   .recent{grid-template-columns:1fr}.recent .row:nth-last-child(2){border-bottom:1px solid var(--rule)}
   .recent .row{grid-template-columns:104px 1fr}
