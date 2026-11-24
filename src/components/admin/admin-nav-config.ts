@@ -53,6 +53,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { label: "Contributors", href: "/admin/contributors" },
       { label: "Staff", href: "/admin/staff" },
+      { label: "Team section", href: "/admin/team", roles: ["admin"] },
     ],
   },
   {

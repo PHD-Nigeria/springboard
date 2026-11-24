@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import { buildIdeasMailto, IDEAS_SUBJECT } from "../src/lib/ideas/mailto.ts";
+assert.equal(buildIdeasMailto(null), null);
+assert.equal(buildIdeasMailto(""), null);
+assert.equal(buildIdeasMailto("not-an-email"), null);
+assert.equal(buildIdeasMailto("a@b.co,c@d.co"), null);
+assert.equal(buildIdeasMailto('a"b@c.co'), null);
+const href = buildIdeasMailto("ideas@example.test");
+assert.equal(href, "mailto:ideas@example.test?subject=Springboard%20%E2%80%93%20Suggestions%20%26%20Ideas");
+assert.equal(decodeURIComponent(href.split("subject=")[1]), IDEAS_SUBJECT);
+console.log("ideas tests passed");

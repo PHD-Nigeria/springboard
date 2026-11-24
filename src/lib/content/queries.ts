@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import type { Content, Author } from "@/content-types/types";
 import { safeParseBodyDocument, createEmptyBodyDocument } from "@/content-types/blocks";
-import { getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
+import { getEditionPdfUrl, getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
 import { getAdminSession } from "@/lib/auth/session";
 import { cache } from "react";
 import { isEditionPubliclyVisible, publicEditionOrFilter, publicStatusOrFilter } from "@/lib/content/visibility";
@@ -1018,6 +1018,12 @@ export interface ArchiveEdition {
   galleryCount: number;
   videoCount: number;
   coverImageUrl: string | null;
+  /** Original PDF, if one has been uploaded: `pdfUrl` opens it, `pdfDownloadUrl` saves it. Both null until the PDF migration and an upload exist. */
+  pdfUrl: string | null;
+  pdfDownloadUrl: string | null;
+  pdfSizeBytes: number | null;
+  /** Human period label ("Q2 2026"), shown on the card when set. */
+  periodLabel: string | null;
 }
 
 /**
@@ -1026,10 +1032,23 @@ export interface ArchiveEdition {
  */
 export async function getPublishedEditions(): Promise<ArchiveEdition[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  type EditionRow = Pick<PublicationRow, "id" | "slug" | "title" | "subtitle" | "status" | "publish_at" | "published_at"> & {
+    publication_cover_media: { storage_path: string; bucket: "public" | "private" } | null;
+    pdf_path?: string | null;
+    pdf_filename?: string | null;
+    pdf_size_bytes?: number | null;
+    period_label?: string | null;
+    period_start?: string | null;
+  };
+  const baseColumns = "id, slug, title, subtitle, status, publish_at, published_at, publication_cover_media:cover_media_id ( storage_path, bucket )";
+  let { data, error } = await supabase
     .from("publications")
-    .select("id, slug, title, subtitle, status, publish_at, published_at, publication_cover_media:cover_media_id ( storage_path, bucket )")
-    .returns<(Pick<PublicationRow, "id" | "slug" | "title" | "subtitle" | "status" | "publish_at" | "published_at"> & { publication_cover_media: { storage_path: string; bucket: "public" | "private" } | null })[]>();
+    .select(`${baseColumns}, pdf_path, pdf_filename, pdf_size_bytes, period_label, period_start`)
+    .returns<EditionRow[]>();
+  if (error && (error.code === "42703" || error.code === "PGRST204" || error.code === "PGRST200")) {
+    // The PDF columns do not exist yet (migration not applied): the Archive still works, just without PDFs.
+    ({ data, error } = await supabase.from("publications").select(baseColumns).returns<EditionRow[]>());
+  }
   if (error) throw error;
   const editions = (data ?? []).filter((edition) => isEditionPubliclyVisible(edition));
   if (editions.length === 0) return [];
@@ -1044,7 +1063,8 @@ export async function getPublishedEditions(): Promise<ArchiveEdition[]> {
   const videos = await getHomeVideos();
 
   return editions
-    .sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""))
+    // Newest first: by the edition's own period when it has one, otherwise by publish date.
+    .sort((a, b) => (b.period_start ?? b.published_at ?? "").localeCompare(a.period_start ?? a.published_at ?? ""))
     .map((edition) => {
       const mine = (items ?? [])
         .filter((row) => row.publication_id === edition.id)
@@ -1065,6 +1085,22 @@ export async function getPublishedEditions(): Promise<ArchiveEdition[]> {
           edition.publication_cover_media && edition.publication_cover_media.bucket === "public"
             ? getPublicUrl(supabase, edition.publication_cover_media.storage_path)
             : null,
+        pdfUrl: edition.pdf_path ? getEditionPdfUrl(supabase, edition.pdf_path) : null,
+        pdfDownloadUrl: edition.pdf_path ? getEditionPdfUrl(supabase, edition.pdf_path, edition.pdf_filename || `${edition.slug}.pdf`) : null,
+        pdfSizeBytes: edition.pdf_size_bytes ?? null,
+        periodLabel: edition.period_label ?? null,
       };
     });
+}
+
+/**
+ * Where "Share Your Ideas" mail goes, set by an admin in Settings. Read through the narrow SECURITY DEFINER function
+ * site_settings_public_ideas(), because site_settings itself is not publicly readable. Returns null (button disabled)
+ * when no address is configured or the function does not exist yet (migration not applied). Never hardcoded.
+ */
+export async function getIdeasEmail(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("site_settings_public_ideas");
+  if (error) return null;
+  return typeof data === "string" && data.trim() ? data.trim() : null;
 }

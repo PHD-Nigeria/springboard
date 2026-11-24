@@ -10,6 +10,9 @@ export const STORAGE_BUCKETS = {
   private: "media-private",
 } as const;
 
+/** Public bucket for original edition PDFs (migration 20261124010000_edition_pdfs.sql). Separate from the media buckets. */
+export const EDITION_PDF_BUCKET = "edition-pdfs";
+
 export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
 
 /**
@@ -49,5 +52,13 @@ export function isSignedStorageUrl(url: string | null | undefined): boolean {
  */
 export function getPublicUrl(supabase: SupabaseClient, storagePath: string) {
   const { data } = supabase.storage.from(STORAGE_BUCKETS.public).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+/** Public URL of an edition PDF. With `download`, the browser is asked to save it under that file name instead of opening it. */
+export function getEditionPdfUrl(supabase: SupabaseClient, storagePath: string, download?: string) {
+  const { data } = supabase.storage
+    .from(EDITION_PDF_BUCKET)
+    .getPublicUrl(storagePath, download ? { download } : undefined);
   return data.publicUrl;
 }

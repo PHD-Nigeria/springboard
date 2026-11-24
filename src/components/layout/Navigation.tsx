@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { PublicNavItem } from "@/lib/content/queries";
+import { ShareIdeasButton } from "@/components/layout/ShareIdeasButton";
 
 /**
  * Restrained editorial header: wordmark, a small set of section links, and
@@ -22,7 +23,7 @@ import type { PublicNavItem } from "@/lib/content/queries";
  * A group heading itself never navigates — its href is always the empty
  * string the nav-hierarchy migration reserves for that case.
  */
-export function Navigation({ items }: { items: PublicNavItem[] }) {
+export function Navigation({ items, ideasEmail = null }: { items: PublicNavItem[]; ideasEmail?: string | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   // Which top-level group's dropdown/accordion is open — one at a time,
   // desktop and mobile share this state since only one nav renders at once
@@ -179,15 +180,18 @@ export function Navigation({ items }: { items: PublicNavItem[] }) {
           })}
         </nav>
 
+        <div className="flex items-center gap-3">
+          <ShareIdeasButton email={ideasEmail} />
         <button
-          type="button"
-          className="font-body text-sm text-foreground md:hidden"
-          aria-expanded={mobileOpen}
-          aria-controls="mobile-nav"
-          onClick={() => setMobileOpen((open) => !open)}
-        >
-          {mobileOpen ? "Close" : "Menu"}
-        </button>
+            type="button"
+            className="font-body text-sm text-foreground md:hidden"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            {mobileOpen ? "Close" : "Menu"}
+          </button>
+        </div>
       </div>
 
       {mobileOpen && (

@@ -21,7 +21,13 @@ export default async function ArchivePage() {
           <ul className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {editions.map((edition) => (
               <li key={edition.id}>
-                <Link href={`/issues/${edition.slug}`} className="group flex h-full flex-col border border-border border-t-[3px] border-t-primary-500 bg-surface">
+                <div className="group flex h-full flex-col border border-border border-t-[3px] border-t-primary-500 bg-surface">
+                {/* A PDF-only edition (no web stories) has no edition page worth opening, so the card opens its PDF instead. */}
+                <Link
+                  href={edition.storyCount === 0 && edition.pdfUrl ? edition.pdfUrl : `/issues/${edition.slug}`}
+                  {...(edition.storyCount === 0 && edition.pdfUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  className="flex flex-1 flex-col"
+                >
                   <div className="relative aspect-[16/9] overflow-hidden bg-surface-raised">
                     {edition.coverImageUrl ? (
                       <Image src={edition.coverImageUrl} alt="" fill sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" className="object-cover" />
@@ -31,7 +37,7 @@ export default async function ArchivePage() {
                   </div>
                   <div className="flex flex-1 flex-col px-4 pt-3 pb-4">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-body text-xs font-medium tracking-wide text-foreground-muted uppercase">Edition</p>
+                      <p className="font-body text-xs font-medium tracking-wide text-foreground-muted uppercase">{edition.periodLabel ?? "Edition"}</p>
                       {edition.code && <span className="bg-secondary-400 px-2 py-0.5 font-body text-xs font-bold text-primary-900">{edition.code}</span>}
                     </div>
                     <h2 className="mt-2 font-display text-xl leading-tight font-semibold text-foreground group-hover:underline">{edition.title}</h2>
@@ -43,6 +49,18 @@ export default async function ArchivePage() {
                     </p>
                   </div>
                 </Link>
+                {edition.pdfUrl && edition.pdfDownloadUrl && (
+                  <div className="flex flex-wrap gap-4 border-t border-border px-4 py-3 font-body text-sm font-medium">
+                    <a href={edition.pdfUrl} target="_blank" rel="noopener noreferrer" className="text-primary-700 underline underline-offset-2 hover:text-foreground">
+                      Open PDF<span className="sr-only"> of {edition.title} (opens in a new tab)</span>
+                    </a>
+                    <a href={edition.pdfDownloadUrl} download className="text-primary-700 underline underline-offset-2 hover:text-foreground">
+                      Download PDF<span className="sr-only"> of {edition.title}</span>
+                      {edition.pdfSizeBytes ? ` (${(edition.pdfSizeBytes / 1048576).toFixed(1)} MB)` : ""}
+                    </a>
+                  </div>
+                )}
+                </div>
               </li>
             ))}
           </ul>

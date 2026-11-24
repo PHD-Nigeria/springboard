@@ -1,5 +1,6 @@
 "use client";
 
+import { GalleryMetaFields } from "@/components/admin/GalleryMetaFields";
 import { useState, useTransition, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
@@ -699,6 +700,7 @@ function MediaDetailDialog({
             <AdminLabel htmlFor="media-caption">Caption</AdminLabel>
             <AdminInput id="media-caption" value={caption} onChange={(e) => setCaption(e.target.value)} />
           </div>
+          {item.mime_type?.startsWith("image/") && <GalleryMetaFields mediaId={item.id} isPublic={item.bucket === "public"} canCurate={role === "editor" || role === "admin"} />}
           <form action={(formData) => onReplace(formData)} className="flex flex-wrap items-end gap-2">
             <div>
               <AdminLabel htmlFor="media-replace">Replace the file (keeps every place it is used)</AdminLabel>

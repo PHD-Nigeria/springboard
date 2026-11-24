@@ -10,16 +10,19 @@ import { getContentTypeConfig } from "@/content-types/registry";
 import { FeaturedStory } from "@/components/editorial/FeaturedStory";
 import { NewsCard } from "@/components/editorial/NewsCard";
 import { EditorialBanner } from "@/components/editorial/EditorialBanner";
+import { TeamSection } from "@/components/home/TeamSection";
+import { getVisibleTeamMembers } from "@/lib/content/team-queries";
 import { ContributorCard } from "@/components/editorial/ContributorCard";
 
 export default async function Home() {
-  const [recentAll, contributors, newsBites, settings, edition, allVideos] = await Promise.all([
+  const [recentAll, contributors, newsBites, settings, edition, allVideos, teamMembers] = await Promise.all([
     getRecentContent(14),
     getFeaturedContributors(4),
     getNewsBites(6),
     getPublicSiteSettings(),
     getActiveEdition(),
     getHomeVideos(),
+    getVisibleTeamMembers(),
   ]);
 
   // Galleries and video-only items have their own homepage slots (the photo band, the video panel); the story lists skip them.
@@ -175,6 +178,8 @@ export default async function Home() {
           </div>
         </section>
       )}
+
+      <TeamSection members={teamMembers} />
     </main>
   );
 }

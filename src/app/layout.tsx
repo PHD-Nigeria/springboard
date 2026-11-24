@@ -6,7 +6,7 @@ import { UtilityBar } from "@/components/layout/UtilityBar";
 import { quarterMonths, formatLongDate } from "@/lib/content/home-helpers";
 import { Footer } from "@/components/layout/Footer";
 import { PageTransition } from "@/components/motion/PageTransition";
-import { getPublicSiteSettings, getPublicNavItems, getActiveEdition } from "@/lib/content/queries";
+import { getPublicSiteSettings, getPublicNavItems, getActiveEdition, getIdeasEmail } from "@/lib/content/queries";
 
 // Self-hosted via next/font — no runtime request to Google, no layout shift.
 // Syne is the sole typeface per the authoritative PHD brand spec (2026-08-14)
@@ -65,7 +65,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const [navItems, activeEdition] = await Promise.all([getPublicNavItems(), getActiveEdition()]);
+  const [navItems, activeEdition, ideasEmail] = await Promise.all([getPublicNavItems(), getActiveEdition(), getIdeasEmail()]);
 
   return (
     <html lang="en" className={syne.variable}>
@@ -74,7 +74,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           edition={activeEdition ? { code: activeEdition.code, title: activeEdition.title, slug: activeEdition.slug, months: quarterMonths(activeEdition.code) } : null}
           dateLabel={formatLongDate(new Date())}
         />
-        <Navigation items={navItems} />
+        <Navigation items={navItems} ideasEmail={ideasEmail} />
         <PageTransition>{children}</PageTransition>
         <Footer />
       </body>

@@ -8,6 +8,8 @@ import { AdminPageHeader, AdminEmptyState, StatusBadge } from "@/components/admi
 import { EditionForm } from "@/components/admin/EditionForm";
 import { MakeActiveEditionButton } from "@/components/admin/MakeActiveEditionButton";
 import { DeleteEditionButton } from "@/components/admin/DeleteEditionButton";
+import { EditionPdfPanel } from "@/components/admin/EditionPdfPanel";
+import { getEditionPdfAdminState } from "@/lib/admin/edition-pdf-queries";
 import { formatContentDate } from "@/lib/content/format";
 
 function Panel({ title, id, action, children }: { title: string; id?: string; action?: React.ReactNode; children: React.ReactNode }) {
@@ -25,7 +27,7 @@ function Panel({ title, id, action, children }: { title: string; id?: string; ac
 export default async function EditionWorkspacePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> }) {
   const { id } = await params;
   const page = Number((await searchParams).page ?? "1") || 1;
-  const [data, session] = await Promise.all([getEditionWorkspace(id, page), getAdminSession()]);
+  const [data, session, pdf] = await Promise.all([getEditionWorkspace(id, page), getAdminSession(), getEditionPdfAdminState(id)]);
   if (!data) notFound();
 
   const { edition, sections, unsectionedCount, stories, storyTotal, media } = data;
@@ -227,6 +229,16 @@ export default async function EditionWorkspacePage({ params, searchParams }: { p
               )}
             </div>
           </Panel>
+
+          {canEditEdition && (
+            <Panel title="Original PDF (Archive download)">
+              {pdf.available ? (
+                <EditionPdfPanel editionId={edition.id} current={pdf.current} initialPeriodLabel={pdf.periodLabel} initialPeriodStart={pdf.periodStart} />
+              ) : (
+                <p className="p-4 font-body text-sm text-foreground-muted">PDF uploads are not set up in this environment yet (the edition PDF migration has not been applied).</p>
+              )}
+            </Panel>
+          )}
 
           {canEditEdition && (
             <Panel title="Edition details">

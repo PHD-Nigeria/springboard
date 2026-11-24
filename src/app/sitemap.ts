@@ -20,6 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     { url: base, changeFrequency: "daily", priority: 1 },
     { url: `${base}/search`, changeFrequency: "monthly", priority: 0.3 },
+    { url: `${base}/archive`, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${base}/gallery`, changeFrequency: "weekly", priority: 0.6 },
   ];
 
   // The grouped-navigation landing pages (§1 of the Q2 '26 editorial

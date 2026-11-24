@@ -12,7 +12,9 @@
     "test:visibility": "node scripts/test-edition-visibility.mjs",
     "test:visibility:integration": "node scripts/test-public-visibility.mjs",
     "test:contrast": "node scripts/test-taxonomy-contrast.mjs",
-    "test:home-helpers": "node scripts/test-home-helpers.mjs"
+    "test:home-helpers": "node scripts/test-home-helpers.mjs",
+    "test:team": "node scripts/test-team.mjs",
+    "test:ideas": "node scripts/test-ideas.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

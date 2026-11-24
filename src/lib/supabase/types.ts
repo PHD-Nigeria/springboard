@@ -376,6 +376,10 @@ export type Database = {
           storage_path: string
           uploaded_by: string | null
           width: number | null
+          description: string | null
+          gallery_group: string | null
+          gallery_visible: boolean
+          taken_on: string | null
         }
         Insert: {
           alt_text?: string | null
@@ -392,6 +396,10 @@ export type Database = {
           storage_path: string
           uploaded_by?: string | null
           width?: number | null
+          description?: string | null
+          gallery_group?: string | null
+          gallery_visible?: boolean
+          taken_on?: string | null
         }
         Update: {
           alt_text?: string | null
@@ -408,6 +416,10 @@ export type Database = {
           storage_path?: string
           uploaded_by?: string | null
           width?: number | null
+          description?: string | null
+          gallery_group?: string | null
+          gallery_visible?: boolean
+          taken_on?: string | null
         }
         Relationships: [
           {
@@ -512,6 +524,11 @@ export type Database = {
           subtitle: string | null
           title: string
           updated_at: string
+          pdf_filename: string | null
+          pdf_path: string | null
+          pdf_size_bytes: number | null
+          period_label: string | null
+          period_start: string | null
         }
         Insert: {
           cover_media_id?: string | null
@@ -524,6 +541,11 @@ export type Database = {
           subtitle?: string | null
           title: string
           updated_at?: string
+          pdf_filename?: string | null
+          pdf_path?: string | null
+          pdf_size_bytes?: number | null
+          period_label?: string | null
+          period_start?: string | null
         }
         Update: {
           cover_media_id?: string | null
@@ -536,6 +558,11 @@ export type Database = {
           subtitle?: string | null
           title?: string
           updated_at?: string
+          pdf_filename?: string | null
+          pdf_path?: string | null
+          pdf_size_bytes?: number | null
+          period_label?: string | null
+          period_start?: string | null
         }
         Relationships: [
           {
@@ -601,6 +628,7 @@ export type Database = {
           seo_default_description: string | null
           site_title: string | null
           updated_at: string
+          ideas_email: string | null
         }
         Insert: {
           banner_description?: string | null
@@ -617,6 +645,7 @@ export type Database = {
           seo_default_description?: string | null
           site_title?: string | null
           updated_at?: string
+          ideas_email?: string | null
         }
         Update: {
           banner_description?: string | null
@@ -633,6 +662,7 @@ export type Database = {
           seo_default_description?: string | null
           site_title?: string | null
           updated_at?: string
+          ideas_email?: string | null
         }
         Relationships: [
           {
@@ -717,6 +747,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_visible: boolean
+          name: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          name: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          name?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       staff: {
         Row: {
@@ -836,6 +896,7 @@ export type Database = {
       }
       extract_block_text: { Args: { body: Json }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      site_settings_public_ideas: { Args: never; Returns: string | null }
       is_contributor_or_above: { Args: never; Returns: boolean }
       is_editor_or_admin: { Args: never; Returns: boolean }
       list_actor_profiles: {
@@ -884,6 +945,7 @@ export type Database = {
         | "SETTINGS"
         | "NAV_ITEM"
         | "STAFF"
+        | "TEAM"
       content_status:
         | "draft"
         | "review"
@@ -1058,6 +1120,7 @@ export const Constants = {
         "SETTINGS",
         "NAV_ITEM",
         "STAFF",
+        "TEAM",
       ],
       content_status: ["draft", "review", "scheduled", "published", "archived"],
       content_type: [

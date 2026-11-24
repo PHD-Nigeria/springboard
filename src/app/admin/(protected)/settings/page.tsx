@@ -4,14 +4,17 @@ import { signOutAction } from "@/lib/admin/auth-actions";
 import { getSiteSettings, listPublications, listAuthors } from "@/lib/admin/queries";
 import { AdminButton, AdminCard, AdminPageHeader } from "@/components/admin/ui";
 import { SettingsForm } from "@/components/admin/SettingsForm";
+import { IdeasEmailForm } from "@/components/admin/IdeasEmailForm";
+import { getIdeasEmailForAdmin } from "@/lib/admin/ideas-email-actions";
 import { HomepageConfigForm } from "@/components/admin/HomepageConfigForm";
 
 export default async function AdminSettingsPage() {
-  const [session, settings, publications, authors] = await Promise.all([
+  const [session, settings, publications, authors, ideas] = await Promise.all([
     getAdminSession(),
     getSiteSettings(),
     listPublications(),
     listAuthors(),
+    getIdeasEmailForAdmin(),
   ]);
   const isAdmin = session?.role === "admin";
 
@@ -49,6 +52,8 @@ export default async function AdminSettingsPage() {
           publications={publications.map((p) => ({ id: p.id, title: p.title }))}
           isAdmin={isAdmin}
         />
+
+        <IdeasEmailForm initial={ideas.value} available={ideas.available} isAdmin={isAdmin} />
 
         <HomepageConfigForm
           featuredContentId={settings.featuredContentId}
