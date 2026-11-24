@@ -72,7 +72,7 @@ export function GalleryGrid({ groups }: { groups: GalleryGroup[] }) {
       >
         {current && (
           <div className="flex max-h-[96svh] flex-col">
-            <div className="relative min-h-0 flex-1" style={{ height: "70svh" }}>
+            <div className="relative h-[70svh] w-full">
               <Image src={current.url} alt={current.alt} fill sizes="96vw" className="object-contain" />
             </div>
             <div className="flex flex-wrap items-start justify-between gap-3 px-4 py-3 font-body text-sm">
