@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import type { Content, Author } from "@/content-types/types";
 import { safeParseBodyDocument, createEmptyBodyDocument } from "@/content-types/blocks";
-import { getEditionPdfUrl, getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
+import { getPublicUrl, getSignedPrivateUrl, PRIVATE_PREVIEW_URL_TTL_SECONDS } from "@/lib/storage/buckets";
 import { getAdminSession } from "@/lib/auth/session";
 import { cache } from "react";
 import { isEditionPubliclyVisible, publicEditionOrFilter, publicStatusOrFilter } from "@/lib/content/visibility";
@@ -1085,8 +1085,9 @@ export async function getPublishedEditions(): Promise<ArchiveEdition[]> {
           edition.publication_cover_media && edition.publication_cover_media.bucket === "public"
             ? getPublicUrl(supabase, edition.publication_cover_media.storage_path)
             : null,
-        pdfUrl: edition.pdf_path ? getEditionPdfUrl(supabase, edition.pdf_path) : null,
-        pdfDownloadUrl: edition.pdf_path ? getEditionPdfUrl(supabase, edition.pdf_path, edition.pdf_filename || `${edition.slug}.pdf`) : null,
+        // The PDF bucket is private: these are our own routes, which issue a short-lived signed link after the edition is checked.
+        pdfUrl: edition.pdf_path ? `/archive/pdf/${encodeURIComponent(edition.slug)}` : null,
+        pdfDownloadUrl: edition.pdf_path ? `/archive/pdf/${encodeURIComponent(edition.slug)}?download=1` : null,
         pdfSizeBytes: edition.pdf_size_bytes ?? null,
         periodLabel: edition.period_label ?? null,
       };

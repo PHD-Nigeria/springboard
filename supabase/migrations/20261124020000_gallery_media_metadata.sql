@@ -1,7 +1,10 @@
 -- Central Gallery. Additive columns on media so the Gallery is a VIEW of the media library:
 -- a photograph is uploaded once and appears in the Gallery automatically (when it is in the public
 -- bucket). No new table, no copy of any file.
---   * gallery_visible defaults to true, so every existing and future image is included without any backfill.
+--   * EXISTING media starts HIDDEN from the Gallery (portraits, logos, staff photos and other site assets are not
+--     photographs to publish). The column is added with default false, which every existing row takes, and the
+--     default is then switched to true so every NEW upload is visible automatically. No data is updated, and an
+--     editor or admin turns existing photographs on deliberately from the media dialog (or a reviewed statement).
 --   * gallery_group (event/category label) and taken_on (date) drive grouping.
 --   * description is longer-form text alongside the existing caption and alt_text.
 --   * Changing gallery_visible / gallery_group / taken_on is editor-or-admin only (a trigger, the same
@@ -14,9 +17,13 @@
 
 alter table public.media
   add column if not exists description text,
-  add column if not exists gallery_visible boolean not null default true,
+  add column if not exists gallery_visible boolean not null default false,
   add column if not exists gallery_group text,
   add column if not exists taken_on date;
+
+-- From now on every new media row is visible in the Gallery by default (existing rows keep false).
+alter table public.media
+  alter column gallery_visible set default true;
 
 alter table public.media
   drop constraint if exists media_gallery_group_length,

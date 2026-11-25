@@ -10,7 +10,7 @@ export const STORAGE_BUCKETS = {
   private: "media-private",
 } as const;
 
-/** Public bucket for original edition PDFs (migration 20261124010000_edition_pdfs.sql). Separate from the media buckets. */
+/** PRIVATE bucket for original edition PDFs (migration 20261124010000_edition_pdfs.sql). Visitors reach files only through /archive/pdf/<slug>. */
 export const EDITION_PDF_BUCKET = "edition-pdfs";
 
 export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
@@ -55,10 +55,15 @@ export function getPublicUrl(supabase: SupabaseClient, storagePath: string) {
   return data.publicUrl;
 }
 
-/** Public URL of an edition PDF. With `download`, the browser is asked to save it under that file name instead of opening it. */
-export function getEditionPdfUrl(supabase: SupabaseClient, storagePath: string, download?: string) {
-  const { data } = supabase.storage
+/**
+ * Short-lived signed URL for an edition PDF (the bucket is private). Storage issues it only if the caller passes the
+ * edition-pdfs read policy: editors/admins always, anyone else only for an edition they can already see.
+ * With `download`, the browser saves it under that file name instead of opening it. Returns null if not permitted.
+ */
+export async function getEditionPdfSignedUrl(supabase: SupabaseClient, storagePath: string, options: { download?: string; expiresInSeconds?: number } = {}) {
+  const { data, error } = await supabase.storage
     .from(EDITION_PDF_BUCKET)
-    .getPublicUrl(storagePath, download ? { download } : undefined);
-  return data.publicUrl;
+    .createSignedUrl(storagePath, options.expiresInSeconds ?? 60, options.download ? { download: options.download } : undefined);
+  if (error || !data) return null;
+  return data.signedUrl;
 }

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getEditionPdfUrl } from "@/lib/storage/buckets";
+import { getEditionPdfSignedUrl } from "@/lib/storage/buckets";
 
 export interface EditionPdfAdminState {
   /** False when the PDF columns do not exist yet (migration not applied): the panel explains instead of failing. */
@@ -17,9 +17,11 @@ export async function getEditionPdfAdminState(editionId: string): Promise<Editio
     .eq("id", editionId)
     .maybeSingle();
   if (error || !data) return { available: false, current: null, periodLabel: "", periodStart: "" };
+  // Staff get a 10-minute signed link (the bucket is private); null if the file cannot be signed.
+  const signed = data.pdf_path ? await getEditionPdfSignedUrl(supabase, data.pdf_path, { expiresInSeconds: 600 }) : null;
   return {
     available: true,
-    current: data.pdf_path ? { filename: data.pdf_filename, sizeBytes: data.pdf_size_bytes, url: getEditionPdfUrl(supabase, data.pdf_path) } : null,
+    current: data.pdf_path && signed ? { filename: data.pdf_filename, sizeBytes: data.pdf_size_bytes, url: signed } : null,
     periodLabel: data.period_label ?? "",
     periodStart: data.period_start ?? "",
   };

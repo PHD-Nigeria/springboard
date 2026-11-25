@@ -7,7 +7,7 @@ Branch: `feature/final-release-additions` (25 commits ahead of `origin/main`, 0 
 | Phase | Change | Where |
 |---|---|---|
 | 1 Team | CMS-driven team section at the foot of the homepage; admin-only add / edit / remove / reorder / show-hide at `/admin/team` | `team_members` table, `TeamSection`, `TeamManager` |
-| 2 Archive PDFs | Archive cards show Open / Download PDF, newest first (by period, else publish date); editors/admins attach a PDF per edition; PDF-only editions open the PDF directly; Q3 web edition untouched; PDFs are not converted to articles | `publications` new columns, `edition-pdfs` bucket |
+| 2 Archive PDFs | Archive cards show Open / Download PDF, newest first (by period, else publish date); editors/admins attach a PDF per edition (private bucket; visitors get a short-lived signed link via `/archive/pdf/<slug>`, only for editions they can already see); PDF-only editions open the PDF directly; Q3 web edition untouched; PDFs are not converted to articles | `publications` new columns, `edition-pdfs` bucket |
 | 3 Gallery | `/gallery`: every image in the public media bucket appears automatically (no second upload), grouped by event/category or month, responsive grid, accessible lightbox; editors/admins set description, group, date, visibility; videos excluded by MIME type; private images stay private until an admin promotes them | `media` new columns, view-free query |
 | 4 Share Your Ideas | Top-right header button, lightbulb icon, mailto with subject `Springboard – Suggestions & Ideas`; recipient set by an admin in Settings; button is **disabled** until an address exists | `site_settings.ideas_email`, `site_settings_public_ideas()` |
 | 5 Navigation | Migration inserts a Gallery item directly after Archive (order: existing items, Archive, Gallery, Search) | `nav_items` row |
@@ -22,8 +22,8 @@ Branch: `feature/final-release-additions` (25 commits ahead of `origin/main`, 0 
 ## Database migrations (additive, idempotent, not applied)
 Apply in order on Preview first, then Production at release time:
 1. `20261124000000_team_members.sql`: new table, RLS (public sees visible rows; admin writes), seeds the five members only if the table is empty, adds the `TEAM` audit type.
-2. `20261124010000_edition_pdfs.sql`: nullable columns on `publications`, public `edition-pdfs` bucket (PDF only, 50 MiB), storage policies (public read; editor/admin write; admin delete).
-3. `20261124020000_gallery_media_metadata.sql`: nullable columns on `media`, `gallery_visible` defaulting to true, trigger so contributors cannot change curation fields.
+2. `20261124010000_edition_pdfs.sql`: nullable columns on `publications`, **private** `edition-pdfs` bucket (PDF only, 50 MiB), storage policies (read: editors/admins, or anyone for a file attached to an edition they can see; editor/admin write; admin delete).
+3. `20261124020000_gallery_media_metadata.sql`: nullable columns on `media`, `gallery_visible` (existing rows hidden, new rows visible), trigger so contributors cannot change curation fields.
 4. `20261124030000_ideas_email_and_gallery_nav.sql`: `site_settings.ideas_email`, narrow SECURITY DEFINER read function, Gallery nav row.
 
 The app fails soft if any migration is missing (team section hidden, no PDF links, Gallery lists public images, button disabled), so code and database can be released in either order. No existing row, policy, role or auth setting is altered.

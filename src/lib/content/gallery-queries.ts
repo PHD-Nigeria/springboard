@@ -42,13 +42,13 @@ type Row = {
 /**
  * The central Gallery: every image in the PUBLIC media bucket that has not been hidden from the Gallery. There is no second
  * upload and no copy; this reads the same Media Library rows the editors already use. Private-bucket images never appear
- * (older private uploads stay private until an admin promotes them; new uploads are public automatically), and videos are excluded by MIME type. RLS applies on top of these filters.
+ * (existing media is hidden from the Gallery until an editor turns it on; new uploads are visible automatically), and videos are excluded by MIME type. RLS applies on top of these filters.
  * Photos are grouped by the admin-set group, else by month; newest first.
  */
 export async function getGalleryGroups(): Promise<GalleryGroup[]> {
   const supabase = await createClient();
   const base = "id, storage_path, alt_text, caption, mime_type, width, height, created_at";
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("media")
     .select(`${base}, description, gallery_group, taken_on`)
     .eq("bucket", "public")
@@ -57,14 +57,8 @@ export async function getGalleryGroups(): Promise<GalleryGroup[]> {
     .order("created_at", { ascending: false })
     .returns<Row[]>();
   if (error && (error.code === "42703" || error.code === "PGRST204")) {
-    // Gallery metadata columns not applied yet: still show public images, grouped by month.
-    ({ data, error } = await supabase
-      .from("media")
-      .select(base)
-      .eq("bucket", "public")
-      .like("mime_type", "image/%")
-      .order("created_at", { ascending: false })
-      .returns<Row[]>());
+    // Gallery columns not applied yet: show nothing rather than exposing every existing public image.
+    return [];
   }
   if (error) throw error;
 
