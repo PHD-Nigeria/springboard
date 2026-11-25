@@ -6,7 +6,7 @@ import { getAdminSession } from "@/lib/auth/session";
 import { getPublicUrl, STORAGE_BUCKETS } from "@/lib/storage/buckets";
 import { listMedia, type AdminMediaRow } from "@/lib/admin/queries";
 import { logAuditEvent } from "@/lib/admin/audit";
-import { MAX_FILE_SIZE_BYTES, isAllowedMimeType, MEDIA_UPLOAD_ERRORS } from "@/lib/admin/media-constants";
+import { MAX_FILE_SIZE_BYTES, bucketForMimeType, isAllowedMimeType, MEDIA_UPLOAD_ERRORS } from "@/lib/admin/media-constants";
 
 const MEDIA_ROW_SELECT = "id, bucket, storage_path, original_filename, alt_text, caption, mime_type, width, height, file_size_bytes, created_at";
 
@@ -94,7 +94,8 @@ export async function createMediaUploadUrlAction(input: CreateMediaUploadUrlInpu
     return { error: MEDIA_UPLOAD_ERRORS.FILE_TOO_LARGE };
   }
 
-  const bucketId = input.bucket === "public" ? "media-public" : "media-private";
+  const bucket = bucketForMimeType(input.mimeType);
+  const bucketId = bucket === "public" ? "media-public" : "media-private";
   const extension = input.filename.split(".").pop() || "bin";
   const storagePath = `uploads/${crypto.randomUUID()}.${extension}`;
 
@@ -104,7 +105,7 @@ export async function createMediaUploadUrlAction(input: CreateMediaUploadUrlInpu
     return { error: describeUploadError(error.message, MEDIA_UPLOAD_ERRORS.SIGNED_URL_FAILED) };
   }
 
-  return { error: null, signedUrl: data.signedUrl, token: data.token, path: storagePath, bucket: input.bucket };
+  return { error: null, signedUrl: data.signedUrl, token: data.token, path: storagePath, bucket };
 }
 
 export interface CompleteMediaUploadInput {
@@ -163,7 +164,9 @@ export async function completeMediaUploadAction(input: CompleteMediaUploadInput)
     return { error: MEDIA_UPLOAD_ERRORS.INVALID_REFERENCE };
   }
 
-  const bucketId = input.bucket === "public" ? "media-public" : "media-private";
+  // The server decides the bucket from the file type (images are public, so they join the Gallery); the client's value is ignored.
+  const bucket = bucketForMimeType(input.mimeType);
+  const bucketId = bucket === "public" ? "media-public" : "media-private";
   const folder = input.path.includes("/") ? input.path.split("/").slice(0, -1).join("/") : undefined;
   const filenamePart = input.path.split("/").pop() ?? input.path;
 
@@ -192,7 +195,7 @@ export async function completeMediaUploadAction(input: CompleteMediaUploadInput)
   const { data, error: insertError } = await supabase
     .from("media")
     .insert({
-      bucket: input.bucket,
+      bucket,
       storage_path: input.path,
       original_filename: input.originalFilename || null,
       mime_type: input.mimeType,

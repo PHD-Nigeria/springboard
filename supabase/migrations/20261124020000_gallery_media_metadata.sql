@@ -6,8 +6,10 @@
 --   * description is longer-form text alongside the existing caption and alt_text.
 --   * Changing gallery_visible / gallery_group / taken_on is editor-or-admin only (a trigger, the same
 --     pattern as prevent_media_bucket_change); contributors can still edit description/caption/alt text.
---   * Private files are NEVER exposed by this: the Gallery query requires bucket = 'public', and
---     promoting private -> public stays admin-only and manual.
+--   * New photographs are uploaded straight into the public bucket by the app (owner decision), so they join the
+--     Gallery with no promotion step. Older PRIVATE files are never exposed by this: the Gallery query requires
+--     bucket = 'public', and promoting an existing private file stays admin-only (prevent_media_bucket_change).
+--   * Administrators hide a photograph with gallery_visible = false, or remove it (media delete is admin-only).
 -- Rollback: drop trigger/function, then drop the four columns.
 
 alter table public.media

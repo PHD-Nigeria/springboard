@@ -14,7 +14,8 @@
     "test:contrast": "node scripts/test-taxonomy-contrast.mjs",
     "test:home-helpers": "node scripts/test-home-helpers.mjs",
     "test:team": "node scripts/test-team.mjs",
-    "test:ideas": "node scripts/test-ideas.mjs"
+    "test:ideas": "node scripts/test-ideas.mjs",
+    "test:media-bucket": "node scripts/test-media-bucket.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

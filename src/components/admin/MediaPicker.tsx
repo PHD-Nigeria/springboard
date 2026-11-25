@@ -88,7 +88,7 @@ export function MediaPicker({ selected, onSelect, onClear }: MediaPickerProps) {
     startTransition(async () => {
       const result = await uploadMediaDirect(file, {
         altText,
-        bucket: "private",
+        bucket: "public",
         onStageChange: setUploadStage,
       });
       setUploadStage(null);
@@ -193,7 +193,7 @@ export function MediaPicker({ selected, onSelect, onClear }: MediaPickerProps) {
 
           <div className="border-t border-border pt-4">
             <p className="mb-2 font-body text-xs font-medium tracking-wide text-foreground-muted uppercase">
-              Upload new (private until promoted)
+              Upload new (joins the public Gallery)
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <input

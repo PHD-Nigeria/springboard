@@ -24,11 +24,10 @@ import { AdminButton, AdminInput } from "@/components/admin/ui";
  * initial import is done). It is a thin orchestrator over the existing,
  * authorised workflow: every file goes through uploadMediaDirect() — the same
  * signed-URL upload, RLS checks, MIME/size validation, audit logging and
- * rollback as the Media Library's own uploader — into the PRIVATE bucket.
+ * rollback as the Media Library's own uploader — into the public bucket, so photographs join the Gallery automatically.
  * Nothing here talks to Storage or the database any other way, holds any
  * service-role credential, or overwrites anything: every upload mints a new
- * path and a new row. There is deliberately no "promote all": promotion is a
- * separate, per-image, two-step action.
+ * path and a new row. Older private items still use the per-image, two-step promotion.
  */
 
 type ItemStatus = "ready" | "uploading" | "done" | "failed";
@@ -67,7 +66,7 @@ function relativePath(file: File): string {
 function statusLabel(item: BatchItem): string {
   if (!item.validation.ok) return "Can't upload";
   if (item.promote === "promoted") return "Saved · now public";
-  if (item.status === "done") return "Saved · private";
+  if (item.status === "done") return item.media?.bucket === "private" ? "Saved · private" : "Saved · public (in the Gallery)";
   if (item.status === "uploading") return item.stage ? STAGE_LABEL[item.stage] : "Uploading…";
   if (item.status === "failed") return "Failed";
   return item.include ? "Ready" : "Skipped";
@@ -241,7 +240,7 @@ export function MediaBatchImport() {
 
       const result = await uploadMediaDirect(item.file, {
         altText: itemsRef.current.find((candidate) => candidate.key === item.key)?.altText ?? item.altText,
-        bucket: "private",
+        bucket: "public",
         onStageChange: (stage) => patch(item.key, { stage }),
       });
 
@@ -320,7 +319,7 @@ export function MediaBatchImport() {
       item.validation.ok ? "ok" : item.validation.reason,
       describeDuplicates(item).join(" | "),
       item.include ? "yes" : "no",
-      !item.validation.ok ? "not uploadable" : item.status === "done" ? (item.promote === "promoted" ? "saved (public)" : "saved (private)") : item.status === "ready" && !item.include ? "skipped" : item.status,
+      !item.validation.ok ? "not uploadable" : item.status === "done" ? (item.promote === "promoted" || item.media?.bucket === "public" ? "saved (public)" : "saved (private)") : item.status === "ready" && !item.include ? "skipped" : item.status,
       item.media?.id ?? "",
       item.media?.bucket ?? "",
       item.altText,
@@ -356,8 +355,8 @@ export function MediaBatchImport() {
           className="font-body text-sm text-foreground-muted"
         />
         <p className="mt-2 font-body text-xs text-foreground-muted">
-          JPEG, PNG and WebP up to 25 MiB each. Files are only read from your computer — originals are never changed. Everything uploads as
-          private; nothing is promoted automatically.
+          JPEG, PNG and WebP up to 25 MiB each. Files are only read from your computer — originals are never changed. Every photograph uploads as
+          public and appears in the Gallery automatically; hide it from the Gallery details if needed.
         </p>
         {selectionError && (
           <p role="alert" className="mt-2 font-body text-sm text-danger">

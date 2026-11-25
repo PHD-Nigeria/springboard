@@ -32,7 +32,7 @@ export type MediaUploadStage = "preparing" | "uploading" | "saving";
 export interface MediaUploadOptions {
   altText?: string;
   caption?: string;
-  /** Matches the existing convention: every upload defaults to private until an explicit Promote step. */
+  /** Ignored by the server: images always go to the public bucket (and so the Gallery); see bucketForMimeType. */
   bucket?: "public" | "private";
   onStageChange?: (stage: MediaUploadStage) => void;
 }

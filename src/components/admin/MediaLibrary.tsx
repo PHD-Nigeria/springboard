@@ -213,7 +213,7 @@ export function MediaLibrary({ initialMedia, editionUsage, editions, role }: Med
       const result = await uploadMediaDirect(file instanceof File ? file : null, {
         altText,
         caption,
-        bucket: "private",
+        bucket: "public",
         onStageChange: setUploadStage,
       });
       setUploadStage(null);
@@ -223,7 +223,7 @@ export function MediaLibrary({ initialMedia, editionUsage, editions, role }: Med
       }
       if (result.media) {
         setMedia((prev) => [result.media!, ...prev]);
-        setNotice({ tone: "success", text: "Uploaded. The image is private until an administrator promotes it." });
+        setNotice({ tone: "success", text: "Uploaded. The photograph is public and now appears in the Gallery. An editor or administrator can hide it from the Gallery details." });
         setDuplicates([]);
         setAllowDuplicate(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -659,7 +659,7 @@ function MediaDetailDialog({
 
         {item.bucket === "private" && (
           <div className="flex flex-wrap items-center justify-between gap-3 border border-border-strong bg-surface-raised px-3 py-2">
-            <p className="font-body text-xs text-foreground">Private. Not visible on the public site until an administrator promotes it.</p>
+            <p className="font-body text-xs text-foreground">Private (an older upload). Not on the public site or in the Gallery until an administrator promotes it.</p>
             {isAdmin ? (
               <AdminButton type="button" variant="secondary" disabled={pending} onClick={onPromote}>
                 {pending ? "Promoting…" : "Promote to public"}

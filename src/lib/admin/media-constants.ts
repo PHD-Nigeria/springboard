@@ -20,6 +20,16 @@ export type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number];
 // point (see completeMediaUploadAction's doc comment).
 export const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
+/**
+ * Where a NEW upload lands. Every photograph uploaded through the Media Library joins the public Gallery
+ * automatically (owner decision), so images go straight to the public bucket with no promotion step; anything
+ * that is not an image (none is allowed today) would stay private. The server uses this and ignores any bucket
+ * a client asks for, so the rule cannot be bypassed or forgotten by a caller.
+ */
+export function bucketForMimeType(mimeType: string): "public" | "private" {
+  return mimeType.startsWith("image/") ? "public" : "private";
+}
+
 export function isAllowedMimeType(mimeType: string): mimeType is AllowedMimeType {
   return (ALLOWED_MIME_TYPES as readonly string[]).includes(mimeType);
 }

@@ -16,8 +16,8 @@ Branch: `feature/final-release-additions` (25 commits ahead of `origin/main`, 0 
 1. The edition PDFs, with title, period and cover for each. None were uploaded.
 2. The Share Your Ideas recipient address. Until saved in Settings, the button is disabled.
 3. Gallery event/category names (optional). Without them photos group by month.
-4. Decision on the Gallery rule: only **public-bucket** photos auto-appear; private uploads join when an admin promotes them. This keeps the "never make private media public automatically" rule.
-5. Whether the old "People" contributor block should stay. It was kept; the new team section sits below it.
+4. Gallery rule (owner-confirmed): all new photographs are public and in the Gallery automatically. Existing PRIVATE photos (if any, e.g. earlier uploads) are not changed; they join when an admin promotes them. To be checked on Preview.
+5. The old "People" contributor block was removed as instructed.
 
 ## Database migrations (additive, idempotent, not applied)
 Apply in order on Preview first, then Production at release time:

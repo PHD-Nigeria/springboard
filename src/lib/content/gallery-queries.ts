@@ -42,7 +42,7 @@ type Row = {
 /**
  * The central Gallery: every image in the PUBLIC media bucket that has not been hidden from the Gallery. There is no second
  * upload and no copy; this reads the same Media Library rows the editors already use. Private-bucket images never appear
- * (they stay private until an admin promotes them), and videos are excluded by MIME type. RLS applies on top of these filters.
+ * (older private uploads stay private until an admin promotes them; new uploads are public automatically), and videos are excluded by MIME type. RLS applies on top of these filters.
  * Photos are grouped by the admin-set group, else by month; newest first.
  */
 export async function getGalleryGroups(): Promise<GalleryGroup[]> {
