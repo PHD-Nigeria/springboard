@@ -1,6 +1,7 @@
 -- Share Your Ideas recipient + Gallery navigation item.
 --   * site_settings.ideas_email: the address the header button mails. NULL until the official address is
---     supplied; the button stays disabled while it is NULL. No address is invented or defaulted here.
+--     supplied; the button stays disabled while it is NULL. The owner confirmed springboard@phdnigeria.com, which
+--     is seeded below ONLY when the column is still empty, so an admin's later change is never overwritten.
 --     Written only through the existing admin-only site_settings_write policy.
 --   * site_settings_public_ideas: site_settings is contributor+ readable only, so the public header cannot read
 --     the address from the table. A narrow SECURITY DEFINER function returns ONLY this one field.
@@ -18,6 +19,10 @@ alter table public.site_settings
     check (ideas_email is null or (char_length(ideas_email) <= 254 and ideas_email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$'));
 
 comment on column public.site_settings.ideas_email is 'Recipient of the header Share Your Ideas mailto link. Null disables the button.';
+
+update public.site_settings
+   set ideas_email = 'springboard@phdnigeria.com'
+ where id = true and ideas_email is null;
 
 create or replace function public.site_settings_public_ideas()
 returns text

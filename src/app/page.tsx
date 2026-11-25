@@ -1,4 +1,4 @@
-import { getRecentContent, getFeaturedContributors, getNewsBites, getPublicSiteSettings, getContentById, getAuthorsByIds, getActiveEdition, getHomeVideos, pickFeaturedVideo, getEditionGallery } from "@/lib/content/queries";
+import { getRecentContent, getNewsBites, getPublicSiteSettings, getContentById, getActiveEdition, getHomeVideos, pickFeaturedVideo, getEditionGallery } from "@/lib/content/queries";
 import { isEditorialStory } from "@/lib/content/home-helpers";
 import { NewsTicker } from "@/components/home/NewsTicker";
 import { EditionGrid } from "@/components/home/EditionGrid";
@@ -12,12 +12,10 @@ import { NewsCard } from "@/components/editorial/NewsCard";
 import { EditorialBanner } from "@/components/editorial/EditorialBanner";
 import { TeamSection } from "@/components/home/TeamSection";
 import { getVisibleTeamMembers } from "@/lib/content/team-queries";
-import { ContributorCard } from "@/components/editorial/ContributorCard";
 
 export default async function Home() {
-  const [recentAll, contributors, newsBites, settings, edition, allVideos, teamMembers] = await Promise.all([
+  const [recentAll, newsBites, settings, edition, allVideos, teamMembers] = await Promise.all([
     getRecentContent(14),
-    getFeaturedContributors(4),
     getNewsBites(6),
     getPublicSiteSettings(),
     getActiveEdition(),
@@ -57,8 +55,6 @@ export default async function Home() {
   const showEditionGrid = Boolean(edition) && gridStories.length > 0;
   const moreStories = rest.filter((item) => !gridStories.some((g) => g.id === item.id)).slice(0, 3);
 
-  const pickedContributors = settings.featuredAuthorIds.length > 0 ? await getAuthorsByIds(settings.featuredAuthorIds) : [];
-  const displayedContributors = pickedContributors.length > 0 ? pickedContributors : contributors;
 
   return (
     <main className="home-theme bg-background text-foreground">
@@ -142,19 +138,6 @@ export default async function Home() {
               const { Card } = getContentTypeConfig(item.contentType);
               return <Card key={item.id} content={item} />;
             })}
-          </div>
-        </section>
-      )}
-
-      {displayedContributors.length > 0 && (
-        <section id="people" className="mx-auto max-w-6xl px-gutter py-section-md">
-          <h2 className="mb-10 border-b border-border pb-4 font-body text-sm font-medium tracking-wide text-foreground-muted uppercase">
-            People
-          </h2>
-          <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
-            {displayedContributors.map((author) => (
-              <ContributorCard key={author.id} author={author} />
-            ))}
           </div>
         </section>
       )}
