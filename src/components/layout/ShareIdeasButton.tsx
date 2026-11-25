@@ -8,7 +8,7 @@ function BulbIcon() {
   );
 }
 
-const base = "inline-flex items-center gap-2 border px-3 py-2 font-body text-sm font-semibold whitespace-nowrap md:px-4";
+const base = "inline-flex h-10 items-center gap-2 border px-3 font-body text-[13px] font-semibold whitespace-nowrap xl:h-9 xl:px-3.5";
 
 /** Header button, top-right, separate from the nav menu. A real mailto link once an address is configured; a disabled button (no link) until then. */
 export function ShareIdeasButton({ email }: { email: string | null }) {
